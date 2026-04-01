@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+openai-agents
+openai
+yfinance
+matplotlib
+pandas
+numpy
+requests
+python-dotenv
+pydantic
+beautifulsoup4
+lxml
