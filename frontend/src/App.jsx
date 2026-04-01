@@ -5,6 +5,7 @@ import SignalCard from "./components/SignalCard";
 import EvidencePanel from "./components/EvidencePanel";
 import ChartView from "./components/ChartView";
 import DataSourcesPanel from "./components/DataSourcesPanel";
+import HowItWorks from "./components/HowItWorks";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -13,6 +14,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const handleQuery = async (question) => {
     setLoading(true);
@@ -79,9 +81,17 @@ export default function App() {
             SEC Intelligence Platform
           </span>
         </div>
-        <span className="text-gray-600 text-xs font-mono">
-          EDGAR &middot; Yahoo Finance &middot; Gemini
-        </span>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowGuide(!showGuide)}
+            className="text-xs text-gray-500 hover:text-terminal border border-border rounded px-2.5 py-1 font-mono transition-colors"
+          >
+            {showGuide ? "Close Guide" : "How It Works"}
+          </button>
+          <span className="text-gray-600 text-xs font-mono">
+            EDGAR &middot; Yahoo Finance &middot; Gemini
+          </span>
+        </div>
       </header>
 
       {/* Query Bar */}
@@ -111,17 +121,23 @@ export default function App() {
               <DataSourcesPanel dataSources={result.data_sources} />
             </>
           )}
-          {!result && !loading && !error && (
-            <div className="flex items-center justify-center h-full text-gray-600">
-              <div className="text-center">
+          {showGuide && (
+            <div className="mb-6">
+              <HowItWorks />
+            </div>
+          )}
+          {!result && !loading && !error && !showGuide && (
+            <div className="flex flex-col items-center justify-center h-full text-gray-600">
+              <div className="text-center mb-8">
                 <p className="font-mono text-lg mb-2">
                   Ask a question to begin analysis
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 mb-6">
                   Example: &ldquo;Should we be long or short on Nvidia going
                   into next quarter?&rdquo;
                 </p>
               </div>
+              <HowItWorks compact />
             </div>
           )}
         </div>
