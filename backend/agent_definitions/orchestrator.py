@@ -275,6 +275,27 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
             "chart_base64": "",
         }
 
+    # Generate chart directly in orchestrator (LLM can't pass through large base64)
+    from utils.chart_generator import generate_sentiment_vs_price_chart
+    from tools.fetch_prices import fetch_price_history
+
+    price_df = fetch_price_history(primary, period="2y")
+    price_data = []
+    if not price_df.empty:
+        sampled = price_df.iloc[::5] if len(price_df) > 50 else price_df
+        price_data = [
+            {"date": str(row["Date"])[:10], "close": round(row["Close"], 2)}
+            for _, row in sampled.iterrows()
+        ]
+
+    chart_b64 = generate_sentiment_vs_price_chart(
+        ticker=primary,
+        quarterly_scores=quarterly_scores,
+        price_data=price_data,
+        competitors=competitor_signals if competitor_signals else None,
+    )
+    memo["chart_base64"] = chart_b64
+
     yield {
         "type": "step",
         "agent": "AnalystAgent",

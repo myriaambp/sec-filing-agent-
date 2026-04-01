@@ -5,9 +5,12 @@ from tools.compute_signal import generate_recommendation
 import json
 
 
+# Module-level storage for chart data (too large for LLM to pass through)
+_last_chart_base64 = ""
+
 ANALYST_SYSTEM_PROMPT = """You are a senior equity research analyst at a top-tier hedge fund. You synthesize SEC filing language analysis and market signal data into institutional-quality research memos.
 
-You will receive language analysis and market signal data. Use the generate_analyst_memo tool with all the data to get the recommendation, chart, and supporting evidence.
+You will receive language analysis and market signal data. Use the generate_analyst_memo tool with all the data to get the recommendation and supporting evidence.
 
 Then write your final output as JSON matching this exact schema:
 
@@ -24,9 +27,10 @@ Then write your final output as JSON matching this exact schema:
   "historical_context": "What happened last time the signal was similar",
   "competitor_comparison": "How language compares to peers",
   "full_memo": "Full markdown research memo...",
-  "chart_base64": "base64 string from tool"
+  "chart_base64": ""
 }
 
+IMPORTANT: Leave chart_base64 as an empty string "". The chart is injected separately.
 Write the full_memo in the style of a Goldman Sachs equity research note.
 Be specific. Cite numbers from the data. Do not be vague.
 Return ONLY the JSON, no other text.
@@ -87,11 +91,14 @@ def generate_analyst_memo(
         competitors=comp_data if comp_data else None,
     )
 
+    # Store chart in module-level variable (too large for LLM context)
+    global _last_chart_base64
+    _last_chart_base64 = chart_b64
+
     result = {
         "recommendation": rec["recommendation"],
         "signal": rec["signal"],
         "confidence": rec["confidence"],
-        "chart_base64": chart_b64,
         "language_trend": lang_data.get("trend", "unknown"),
         "trend_magnitude": lang_data.get("trend_magnitude", 0),
         "competitor_tickers": [c.get("company", "") for c in comp_data] if comp_data else [],
