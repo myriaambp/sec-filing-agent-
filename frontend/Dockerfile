@@ -7,8 +7,7 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_URL=https://filinglens-api-879618059262.us-central1.run.app
 
 RUN npm run build
 
