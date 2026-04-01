@@ -153,6 +153,29 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     filings_count = primary_language.get("filings_analyzed", 0)
     trend = primary_language.get("trend", "unknown")
 
+    # Check if we got an error or no filings
+    if primary_language.get("error") or filings_count == 0:
+        error_msg = primary_language.get("error", f"No SEC filings found for {primary}. It may not be a valid public company ticker.")
+        yield {"type": "error", "message": error_msg}
+        return
+
+    # Fetch filing metadata directly for source links (don't rely on LLM passing these through)
+    from tools.fetch_filings import fetch_recent_filings, get_cik_for_ticker
+    primary_filings_meta = fetch_recent_filings(primary, form_type, 6)
+    primary_cik = get_cik_for_ticker(primary)
+    primary_cik_clean = primary_cik.lstrip("0") if primary_cik else ""
+    primary_filing_sources = []
+    edgar_company_page = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={primary}&type={form_type}&dateb=&owner=include&count=40"
+    for f in primary_filings_meta:
+        acc_no_dashes = f["accession_number"].replace("-", "")
+        primary_filing_sources.append({
+            "period": f["period"],
+            "filing_date": f["filing_date"],
+            "form_type": form_type,
+            "url": f"https://www.sec.gov/Archives/edgar/data/{primary_cik_clean}/{acc_no_dashes}/{f['primary_doc']}",
+            "accession_number": f["accession_number"],
+        })
+
     yield {
         "type": "step",
         "agent": "FilingNLPAgent",
@@ -295,6 +318,45 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
         competitors=competitor_signals if competitor_signals else None,
     )
     memo["chart_base64"] = chart_b64
+
+    # Inject data sources so the frontend can link to raw data
+    sources = {
+        "primary": {
+            "edgar_company_page": edgar_company_page,
+            "filings": primary_filing_sources,
+        },
+        "competitors": {},
+        "price_data": {
+            "source": "Yahoo Finance",
+            "ticker": primary,
+            "url": f"https://finance.yahoo.com/quote/{primary}/history/",
+        },
+        "raw_scores": {
+            "primary_quarterly_scores": quarterly_scores,
+            "competitor_quarterly_scores": {
+                c.get("company", ""): c.get("quarterly_scores", [])
+                for c in competitor_signals
+            },
+        },
+    }
+    # Add competitor filing sources
+    for c in competitor_signals:
+        comp_ticker = c.get("company", "")
+        comp_sources = c.get("sources", {})
+        if not comp_sources:
+            # Build sources from quarterly_scores filing_urls if available
+            comp_filings = []
+            for q in c.get("quarterly_scores", []):
+                if q.get("filing_url"):
+                    comp_filings.append({
+                        "period": q.get("period", ""),
+                        "filing_date": q.get("filing_date", ""),
+                        "form_type": form_type,
+                        "url": q["filing_url"],
+                    })
+            comp_sources = {"filings": comp_filings}
+        sources["competitors"][comp_ticker] = comp_sources
+    memo["data_sources"] = sources
 
     yield {
         "type": "step",

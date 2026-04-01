@@ -4,6 +4,7 @@ import AgentSteps from "./components/AgentSteps";
 import SignalCard from "./components/SignalCard";
 import EvidencePanel from "./components/EvidencePanel";
 import ChartView from "./components/ChartView";
+import DataSourcesPanel from "./components/DataSourcesPanel";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -79,7 +80,7 @@ export default function App() {
           </span>
         </div>
         <span className="text-gray-600 text-xs font-mono">
-          EDGAR &middot; Yahoo Finance &middot; OpenAI
+          EDGAR &middot; Yahoo Finance &middot; Gemini
         </span>
       </header>
 
@@ -107,6 +108,7 @@ export default function App() {
               <SignalCard result={result} />
               <ChartView chartBase64={result.chart_base64} />
               <EvidencePanel result={result} />
+              <DataSourcesPanel dataSources={result.data_sources} />
             </>
           )}
           {!result && !loading && !error && (

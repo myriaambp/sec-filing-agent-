@@ -43,7 +43,7 @@ def compute_returns_around_date(
         spy_ret = _get_return(spy_df, filing_date, w)
         result[f"return_{w}d"] = round(stock_ret, 4)
         result[f"sp500_return_{w}d"] = round(spy_ret, 4)
-        result[f"outperformed_{w}d"] = stock_ret > spy_ret
+        result[f"outperformed_{w}d"] = bool(stock_ret > spy_ret)
 
     return result
 

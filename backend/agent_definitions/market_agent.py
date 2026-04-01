@@ -4,10 +4,13 @@ from tools.compute_signal import correlate_language_with_returns, compute_signal
 import json
 
 
-MARKET_SYSTEM_PROMPT = """You are a quantitative market signal analyst. Your job is to:
-1. Use the compute_market_signal tool to analyze how a company's stock performed after each SEC filing.
-2. The tool correlates filing language uncertainty scores with subsequent stock returns.
-3. Examine the correlation data and assess signal strength.
+MARKET_SYSTEM_PROMPT = """You are a quantitative market signal analyst.
+
+IMPORTANT: You MUST call the compute_market_signal tool first. Do NOT generate data from your own knowledge. The tool fetches real stock price data and computes correlations. If the tool returns an error, return that error as JSON: {"error": "message here"}.
+
+Steps:
+1. Call the compute_market_signal tool with the ticker, filing_dates, and uncertainty_scores provided.
+2. Examine the tool's correlation data and assess signal strength.
 
 Return your analysis as JSON matching this exact schema:
 

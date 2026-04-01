@@ -4,10 +4,14 @@ from tools.analyze_language import analyze_filing_language, compute_trend
 import json
 
 
-FILING_NLP_SYSTEM_PROMPT = """You are a specialized SEC filing language analyst. Your job is to:
-1. Use the fetch_and_analyze_filings tool to retrieve and analyze recent SEC filings for the requested company.
-2. Examine the results carefully.
-3. Return your analysis as JSON matching this exact schema:
+FILING_NLP_SYSTEM_PROMPT = """You are a specialized SEC filing language analyst.
+
+IMPORTANT: You MUST call the fetch_and_analyze_filings tool first. Do NOT generate data from your own knowledge. The tool fetches real SEC filings from EDGAR and analyzes them. If the tool returns an error, return that error as JSON: {"error": "message here"}.
+
+Steps:
+1. Call the fetch_and_analyze_filings tool with the ticker from the user's request.
+2. Examine the tool's results carefully.
+3. Return the analysis as JSON matching this exact schema:
 
 {
   "company": "TICKER",
@@ -52,7 +56,9 @@ def fetch_and_analyze_filings(
         return json.dumps({"error": f"No {form_type} filings found for {ticker}"})
 
     company_name = filings[0].get("company_name", ticker)
+    cik = filings[0].get("cik", "").lstrip("0")
     quarterly_scores = []
+    filing_sources = []
 
     for filing in filings:
         text = fetch_filing_text(
@@ -66,12 +72,28 @@ def fetch_and_analyze_filings(
         score = analyze_filing_language(
             text, filing["period"], filing["filing_date"]
         )
+        # Add source URL for each filing
+        acc_no_dashes = filing["accession_number"].replace("-", "")
+        filing_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{acc_no_dashes}/{filing['primary_doc']}"
+        score["filing_url"] = filing_url
+        score["accession_number"] = filing["accession_number"]
         quarterly_scores.append(score)
+
+        filing_sources.append({
+            "period": filing["period"],
+            "filing_date": filing["filing_date"],
+            "form_type": form_type,
+            "url": filing_url,
+            "accession_number": filing["accession_number"],
+        })
 
     if not quarterly_scores:
         return json.dumps({"error": f"Could not extract text from any filings for {ticker}"})
 
     trend_data = compute_trend(quarterly_scores)
+
+    # EDGAR company page
+    company_page = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={ticker}&type={form_type}&dateb=&owner=include&count=40"
 
     result = {
         "company": ticker.upper(),
@@ -80,6 +102,10 @@ def fetch_and_analyze_filings(
         "quarterly_scores": quarterly_scores,
         "trend": trend_data["trend"],
         "trend_magnitude": trend_data["trend_magnitude"],
+        "sources": {
+            "edgar_company_page": company_page,
+            "filings": filing_sources,
+        },
     }
     return json.dumps(result, indent=2)
 
