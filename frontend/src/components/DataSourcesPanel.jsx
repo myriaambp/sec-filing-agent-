@@ -1,3 +1,28 @@
+function downloadCSV(filename, headers, rows) {
+  const csv = [
+    headers.join(","),
+    ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function DownloadBtn({ onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-xs text-terminal/60 hover:text-terminal border border-terminal/20 hover:border-terminal/40 rounded px-2 py-0.5 font-mono transition-colors"
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function DataSourcesPanel({ dataSources }) {
   if (!dataSources) return null;
 
@@ -6,15 +31,77 @@ export default function DataSourcesPanel({ dataSources }) {
   const priceData = dataSources.price_data || {};
   const rawScores = dataSources.raw_scores || {};
 
+  const handleDownloadScores = () => {
+    const headers = [
+      "Ticker",
+      "Period",
+      "Filing Date",
+      "Uncertainty Score",
+      "Sentiment Score",
+      "Uncertainty Words",
+      "Total Words",
+    ];
+    const rows = [];
+    const ticker = priceData.ticker || "PRIMARY";
+    for (const q of rawScores.primary_quarterly_scores || []) {
+      rows.push([
+        ticker,
+        q.period,
+        q.filing_date,
+        q.uncertainty_score,
+        q.sentiment_score,
+        q.uncertainty_word_count,
+        q.total_word_count,
+      ]);
+    }
+    for (const [comp, scores] of Object.entries(
+      rawScores.competitor_quarterly_scores || {}
+    )) {
+      for (const q of scores || []) {
+        rows.push([
+          comp,
+          q.period,
+          q.filing_date,
+          q.uncertainty_score,
+          q.sentiment_score,
+          q.uncertainty_word_count || "",
+          q.total_word_count || "",
+        ]);
+      }
+    }
+    downloadCSV(`${ticker}_language_scores.csv`, headers, rows);
+  };
+
+  const handleDownloadFilings = () => {
+    const headers = ["Ticker", "Period", "Filing Date", "Form Type", "URL"];
+    const rows = [];
+    const ticker = priceData.ticker || "PRIMARY";
+    for (const f of primary.filings || []) {
+      rows.push([ticker, f.period, f.filing_date, f.form_type, f.url]);
+    }
+    for (const [comp, data] of Object.entries(competitors)) {
+      for (const f of data.filings || []) {
+        rows.push([comp, f.period, f.filing_date, f.form_type, f.url]);
+      }
+    }
+    downloadCSV(`${ticker}_filing_sources.csv`, headers, rows);
+  };
+
   return (
     <div className="space-y-4">
       {/* Filing Sources */}
       <div className="bg-navy-light border border-border rounded-xl p-5">
-        <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
-          Data Sources — SEC Filings
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+            Data Sources — SEC Filings
+          </h3>
+          {primary.filings && primary.filings.length > 0 && (
+            <DownloadBtn onClick={handleDownloadFilings}>
+              Download CSV
+            </DownloadBtn>
+          )}
+        </div>
 
-        {/* Primary company filings */}
         {primary.filings && primary.filings.length > 0 && (
           <div className="mb-4">
             {primary.edgar_company_page && (
@@ -38,7 +125,10 @@ export default function DataSourcesPanel({ dataSources }) {
               </thead>
               <tbody>
                 {primary.filings.map((f, i) => (
-                  <tr key={i} className="border-b border-white/5 text-gray-400">
+                  <tr
+                    key={i}
+                    className="border-b border-white/5 text-gray-400"
+                  >
                     <td className="py-1.5 font-mono">{f.period}</td>
                     <td className="py-1.5 font-mono">{f.filing_date}</td>
                     <td className="py-1.5 font-mono">{f.form_type}</td>
@@ -59,7 +149,6 @@ export default function DataSourcesPanel({ dataSources }) {
           </div>
         )}
 
-        {/* Competitor filings */}
         {Object.entries(competitors).map(([ticker, data]) => (
           <div key={ticker} className="mt-3 pt-3 border-t border-white/5">
             <span className="text-xs font-mono text-gray-500">
@@ -112,9 +201,14 @@ export default function DataSourcesPanel({ dataSources }) {
       {rawScores.primary_quarterly_scores &&
         rawScores.primary_quarterly_scores.length > 0 && (
           <div className="bg-navy-light border border-border rounded-xl p-5">
-            <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
-              Raw Analysis Scores
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+                Raw Analysis Scores
+              </h3>
+              <DownloadBtn onClick={handleDownloadScores}>
+                Download CSV
+              </DownloadBtn>
+            </div>
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-gray-500 border-b border-border">
@@ -149,13 +243,15 @@ export default function DataSourcesPanel({ dataSources }) {
               </tbody>
             </table>
 
-            {/* Competitor raw scores */}
             {rawScores.competitor_quarterly_scores &&
               Object.entries(rawScores.competitor_quarterly_scores).map(
                 ([ticker, scores]) =>
                   scores &&
                   scores.length > 0 && (
-                    <div key={ticker} className="mt-3 pt-3 border-t border-white/5">
+                    <div
+                      key={ticker}
+                      className="mt-3 pt-3 border-t border-white/5"
+                    >
                       <span className="text-xs font-mono text-gray-500 block mb-1">
                         {ticker}
                       </span>

@@ -31,7 +31,32 @@ Then write your final output as JSON matching this exact schema:
 }
 
 IMPORTANT: Leave chart_base64 as an empty string "". The chart is injected separately.
-Write the full_memo in the style of a Goldman Sachs equity research note.
+
+For key_evidence, provide 4-6 specific data-backed points. Each should cite a number.
+
+For historical_context, explain what happened to the stock in prior quarters when the language signal was similar. Cite specific returns.
+
+For competitor_comparison, compare the primary company's uncertainty trend to each competitor with specific scores.
+
+For full_memo, write a detailed Goldman Sachs-style research note in markdown with these sections:
+## Investment Thesis
+Why we are recommending this action. The core argument in 2-3 sentences.
+
+## Language Trend Analysis
+Quarter-by-quarter breakdown of uncertainty and sentiment scores. What specific shifts occurred and what they suggest about management's outlook.
+
+## Market Signal Analysis
+How has the stock historically performed after filings with similar language? Cite 30-day and 60-day returns. How does this compare to the S&P 500?
+
+## Competitive Landscape
+How does this company's filing language compare to peers? Who is trending better/worse and what does that imply?
+
+## Risk Factors
+What could invalidate this recommendation? What are the limitations of language-based analysis?
+
+## Conclusion
+Restate the recommendation with confidence level and the single most important data point supporting it.
+
 Be specific. Cite numbers from the data. Do not be vague.
 Return ONLY the JSON, no other text.
 """

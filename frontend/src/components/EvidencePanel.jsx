@@ -1,24 +1,217 @@
 import ReactMarkdown from "react-markdown";
 
-export default function EvidencePanel({ result }) {
-  const handleDownload = () => {
-    const blob = new Blob([result.full_memo || ""], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${result.company}_analysis.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+function generateFullReportHTML(result) {
+  const scores = result.data_sources?.raw_scores?.primary_quarterly_scores || [];
+  const compScores = result.data_sources?.raw_scores?.competitor_quarterly_scores || {};
+  const filings = result.data_sources?.primary?.filings || [];
+  const priceUrl = result.data_sources?.price_data?.url || "";
+  const edgarUrl = result.data_sources?.primary?.edgar_company_page || "";
+  const chartSrc = result.chart_base64
+    ? `data:image/png;base64,${result.chart_base64}`
+    : "";
 
+  const recColor =
+    result.recommendation === "BUY" || result.recommendation === "OVERWEIGHT"
+      ? "#00d4aa"
+      : result.recommendation === "SELL" || result.recommendation === "UNDERWEIGHT"
+        ? "#ff4757"
+        : "#ffa502";
+
+  const scoresTableRows = scores
+    .map(
+      (q) => `
+    <tr>
+      <td>${q.period}</td>
+      <td>${q.filing_date}</td>
+      <td>${(q.uncertainty_score || 0).toFixed(4)}</td>
+      <td>${(q.sentiment_score || 0).toFixed(4)}</td>
+      <td>${q.uncertainty_word_count}</td>
+      <td>${q.total_word_count}</td>
+    </tr>`
+    )
+    .join("");
+
+  const compTables = Object.entries(compScores)
+    .map(
+      ([ticker, cScores]) => `
+    <h3 style="margin-top:20px;color:#666;">${ticker} — Quarterly Language Scores</h3>
+    <table>
+      <thead><tr><th>Period</th><th>Uncertainty</th><th>Sentiment</th></tr></thead>
+      <tbody>
+        ${(cScores || [])
+          .map(
+            (q) =>
+              `<tr><td>${q.period}</td><td>${(q.uncertainty_score || 0).toFixed(4)}</td><td>${(q.sentiment_score || 0).toFixed(4)}</td></tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>`
+    )
+    .join("");
+
+  const filingsTable = filings
+    .map(
+      (f) =>
+        `<tr><td>${f.period}</td><td>${f.filing_date}</td><td>${f.form_type}</td><td><a href="${f.url}">${f.accession_number || "View"}</a></td></tr>`
+    )
+    .join("");
+
+  const evidenceList = (result.key_evidence || [])
+    .map((e) => `<li>${e}</li>`)
+    .join("");
+
+  return `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>FilingLens Report — ${result.company}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; color: #1a1a2e; padding: 40px 60px; max-width: 900px; margin: 0 auto; line-height: 1.6; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8; }
+  h3 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; color: #444; }
+  p, li { font-size: 13px; color: #333; }
+  .subtitle { color: #888; font-size: 13px; margin-bottom: 24px; }
+  .signal-box { display: inline-block; padding: 8px 24px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 22px; margin: 12px 0; }
+  .meta-row { display: flex; gap: 40px; margin: 16px 0 24px; }
+  .meta-item { }
+  .meta-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-value { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 12px; }
+  th { text-align: left; padding: 6px 8px; background: #f5f5f5; border-bottom: 2px solid #ddd; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #666; }
+  td { padding: 5px 8px; border-bottom: 1px solid #eee; }
+  tr:nth-child(even) { background: #fafafa; }
+  ul { padding-left: 20px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  .section-reasoning { background: #f8f9fa; border-left: 3px solid ${recColor}; padding: 16px 20px; margin: 16px 0; border-radius: 0 6px 6px 0; }
+  .section-reasoning p { font-size: 13px; line-height: 1.7; }
+  .chart-container { margin: 16px 0; text-align: center; }
+  .chart-container img { max-width: 100%; border: 1px solid #e8e8e8; border-radius: 6px; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e8e8e8; font-size: 11px; color: #aaa; }
+  a { color: #0066cc; }
+  .methodology { background: #f0f4f8; padding: 16px 20px; border-radius: 6px; margin: 12px 0; }
+  .methodology p { font-size: 12px; color: #555; }
+  @media print {
+    body { padding: 20px 30px; }
+    .no-print { display: none; }
+  }
+</style>
+</head><body>
+
+<h1>${result.company_name || result.company}</h1>
+<div class="subtitle">SEC Filing Language Analysis Report &mdash; Generated by FilingLens</div>
+
+<div class="signal-box" style="background: ${recColor}15; color: ${recColor}; border: 2px solid ${recColor};">
+  ${result.recommendation}
+</div>
+
+<div class="meta-row">
+  <div class="meta-item">
+    <div class="meta-label">Signal</div>
+    <div class="meta-value">${result.signal}</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Confidence</div>
+    <div class="meta-value">${Math.round((result.confidence || 0) * 100)}%</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Language Trend</div>
+    <div class="meta-value">${result.language_trend || "N/A"}</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Uncertainty Change</div>
+    <div class="meta-value">${result.uncertainty_score_change || "N/A"}</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Competitors</div>
+    <div class="meta-value">${(result.competitors_analyzed || []).join(", ") || "None"}</div>
+  </div>
+</div>
+
+<h2>Executive Summary</h2>
+<div class="section-reasoning">
+  <ul>${evidenceList}</ul>
+</div>
+
+<h2>Methodology</h2>
+<div class="methodology">
+  <p><strong>Data Collection:</strong> Real SEC filings (10-Q/10-K) were retrieved from the EDGAR database at runtime. Stock price data was sourced from Yahoo Finance covering the past 2&ndash;3 years.</p>
+  <p style="margin-top:8px;"><strong>Language Analysis:</strong> Each filing's MD&amp;A and Risk Factors sections were parsed. An uncertainty score (0&ndash;1) was computed as the ratio of hedging/risk words (may, might, risk, adverse, decline, etc.) to total words, scaled by 40x. A sentiment score (-1 to +1) measures the balance between confidence words (strong, growth, exceeded) and uncertainty words.</p>
+  <p style="margin-top:8px;"><strong>Market Signal:</strong> For each filing date, 30-day and 60-day stock returns were computed and compared to the S&amp;P 500 benchmark. The system checks whether quarters with above-median uncertainty historically preceded underperformance.</p>
+  <p style="margin-top:8px;"><strong>Confidence Score:</strong> Computed from 6 factors: market signal strength (0&ndash;20%), trend magnitude (0&ndash;15%), number of filings analyzed (0&ndash;10%), trend consistency (0&ndash;10%), return spread between high/low uncertainty quarters (0&ndash;10%), and competitor divergence (0&ndash;5%). Base: 30%.</p>
+  <p style="margin-top:8px;"><strong>Recommendation Logic:</strong> If language is deteriorating with a strong/moderate market signal &rarr; SELL/UNDERWEIGHT. If improving &rarr; BUY/OVERWEIGHT. Mixed or weak signals &rarr; HOLD. Magnitude >20% shifts the recommendation to the stronger tier.</p>
+</div>
+
+<h2>Detailed Analysis</h2>
+${result.full_memo ? `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${result.full_memo.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n## /g, "\n<h3>").replace(/\n### /g, "\n<h3>").replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")}</div>` : "<p>No detailed memo available.</p>"}
+
+${chartSrc ? `
+<h2>Uncertainty vs. Price Chart</h2>
+<div class="chart-container">
+  <img src="${chartSrc}" alt="Uncertainty vs Price" />
+</div>
+<p style="font-size:11px;color:#999;">Red line: filing uncertainty score | Green line: stock price | Dashed: competitor uncertainty | Dotted verticals: filing dates</p>
+` : ""}
+
+<h2>Historical Context</h2>
+<p>${result.historical_context || "No historical context available."}</p>
+
+<h2>Competitor Comparison</h2>
+<p>${result.competitor_comparison || "No competitor comparison available."}</p>
+
+<h2>Appendix A — Quarterly Language Scores</h2>
+<h3>${result.company} — Primary Company</h3>
+<table>
+  <thead><tr><th>Period</th><th>Filing Date</th><th>Uncertainty Score</th><th>Sentiment Score</th><th>Uncertainty Words</th><th>Total Words</th></tr></thead>
+  <tbody>${scoresTableRows}</tbody>
+</table>
+${compTables}
+
+<h2>Appendix B — SEC Filing Sources</h2>
+<table>
+  <thead><tr><th>Period</th><th>Filing Date</th><th>Form</th><th>EDGAR Link</th></tr></thead>
+  <tbody>${filingsTable}</tbody>
+</table>
+<p style="margin-top:8px;font-size:12px;">
+  <a href="${edgarUrl}">View all filings on EDGAR</a>
+  &nbsp;|&nbsp;
+  <a href="${priceUrl}">View price history on Yahoo Finance</a>
+</p>
+
+<div class="footer">
+  <p>Generated by FilingLens &mdash; SEC Intelligence Platform</p>
+  <p>Data sourced from SEC EDGAR and Yahoo Finance at runtime. This report is for informational purposes only and does not constitute financial advice.</p>
+  <p>Report generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
+</div>
+
+</body></html>`;
+}
+
+function downloadReport(result) {
+  const html = generateFullReportHTML(result);
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  // Open in new tab so user can Cmd+P / Ctrl+P to save as PDF
+  const win = window.open(url, "_blank");
+  if (win) {
+    win.onload = () => {
+      URL.revokeObjectURL(url);
+    };
+  }
+}
+
+export default function EvidencePanel({ result }) {
   return (
     <div className="space-y-4">
-      {/* Key Evidence */}
+      {/* Key Evidence - Summary */}
       {result.key_evidence && result.key_evidence.length > 0 && (
         <div className="bg-navy-light border border-border rounded-xl p-5">
-          <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
-            Key Evidence
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+              Key Evidence
+            </h3>
+          </div>
           <ul className="space-y-2">
             {result.key_evidence.map((point, i) => (
               <li key={i} className="flex gap-2 text-sm text-gray-300">
@@ -32,46 +225,57 @@ export default function EvidencePanel({ result }) {
         </div>
       )}
 
-      {/* Historical Context */}
-      {result.historical_context && (
-        <div className="bg-navy-light border border-border rounded-xl p-5">
-          <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
-            Historical Context
-          </h3>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            {result.historical_context}
-          </p>
-        </div>
-      )}
+      {/* Historical Context + Competitor in row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {result.historical_context && (
+          <div className="bg-navy-light border border-border rounded-xl p-5">
+            <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
+              Historical Context
+            </h3>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              {result.historical_context}
+            </p>
+          </div>
+        )}
 
-      {/* Competitor Comparison */}
-      {result.competitor_comparison && (
-        <div className="bg-navy-light border border-border rounded-xl p-5">
-          <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
-            Competitor Comparison
-          </h3>
-          <p className="text-sm text-gray-400 leading-relaxed">
-            {result.competitor_comparison}
-          </p>
-        </div>
-      )}
+        {result.competitor_comparison && (
+          <div className="bg-navy-light border border-border rounded-xl p-5">
+            <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
+              Competitor Comparison
+            </h3>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              {result.competitor_comparison}
+            </p>
+          </div>
+        )}
+      </div>
 
-      {/* Full Memo */}
+      {/* Memo Summary + Download Full Report */}
       {result.full_memo && (
         <div className="bg-navy-light border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider">
-              Full Research Memo
+              Research Memo
             </h3>
-            <button
-              onClick={handleDownload}
-              className="text-xs text-terminal/70 hover:text-terminal border border-terminal/20 rounded px-3 py-1 font-mono transition-colors"
-            >
-              Download .md
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => downloadReport(result)}
+                className="text-xs bg-terminal/10 text-terminal hover:bg-terminal/20 border border-terminal/30 rounded px-3 py-1.5 font-mono font-semibold transition-colors"
+              >
+                Download Full Report
+              </button>
+            </div>
           </div>
-          <div className="prose prose-sm prose-invert max-w-none text-gray-300 leading-relaxed">
+          <div className="prose prose-sm prose-invert max-w-none text-gray-300 leading-relaxed text-sm">
             <ReactMarkdown>{result.full_memo}</ReactMarkdown>
+          </div>
+          <div className="mt-4 pt-3 border-t border-white/5">
+            <p className="text-xs text-gray-600">
+              The full downloadable report includes methodology, confidence
+              score breakdown, raw data tables, filing source links, and
+              appendices. Use the button above to open it — then save as PDF
+              via your browser&apos;s print dialog (Cmd+P / Ctrl+P).
+            </p>
           </div>
         </div>
       )}
