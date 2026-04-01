@@ -319,6 +319,19 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     )
     memo["chart_base64"] = chart_b64
 
+    # Override recommendation/confidence with data-driven values (LLM tends to hardcode 75%)
+    from tools.compute_signal import generate_recommendation
+    computed_rec = generate_recommendation(
+        language_signal=primary_language,
+        market_signal=market_signal,
+        competitor_signals=competitor_signals,
+    )
+    memo["recommendation"] = computed_rec["recommendation"]
+    memo["signal"] = computed_rec["signal"]
+    memo["confidence"] = computed_rec["confidence"]
+    memo["language_trend"] = primary_language.get("trend", "unknown")
+    memo["uncertainty_score_change"] = f"{primary_language.get('trend_magnitude', 0):+.1f}% vs prior quarter"
+
     # Inject data sources so the frontend can link to raw data
     sources = {
         "primary": {
