@@ -1,19 +1,36 @@
 import re
 from typing import List, Dict
 
-UNCERTAINTY_WORDS = [
+UNCERTAINTY_WORDS = {
     "may", "might", "could", "uncertain", "uncertainty", "risk", "risks",
     "headwinds", "challenging", "difficult", "adverse", "unfavorable",
     "decline", "decrease", "volatility", "unpredictable", "fluctuation",
     "concern", "concerns", "exposure", "susceptible", "dependent",
     "impairment", "litigation", "downturn", "weakening", "deterioration",
-]
+    "disruption", "threats", "warned", "caution", "slowing",
+}
 
-CONFIDENCE_WORDS = [
+CONFIDENCE_WORDS = {
     "strong", "growth", "increase", "opportunity", "momentum", "confident",
     "outperform", "leadership", "advantage", "innovation", "expanding",
     "accelerating", "robust", "record", "exceeded", "surpassed",
     "improved", "favorable", "strength", "positive", "optimistic",
+    "delivered", "achieved", "gained", "progressed", "profitable",
+    "efficient", "successful", "demand", "generated", "contributed",
+}
+
+# Boilerplate phrases to skip when extracting risk phrases
+BOILERPLATE_PATTERNS = [
+    r"forward.looking statements",
+    r"can also be identified by words such as",
+    r"factors that might cause such differences",
+    r"discussed in part [iv]+",
+    r"refer to .{0,30} risk factors",
+    r"risk factors.{0,10} for a discussion",
+    r"for a discussion of these factors",
+    r"you should read .{0,30} together with",
+    r"sec\.gov",
+    r"securities and exchange commission",
 ]
 
 
@@ -56,14 +73,18 @@ def compute_uncertainty_score(text: str) -> float:
 
 
 def extract_key_risk_phrases(text: str, n: int = 5) -> List[str]:
-    """Extract sentences with highest density of uncertainty words."""
+    """Extract sentences with highest density of uncertainty words, filtering boilerplate."""
     sentences = re.split(r"[.!?]+", text)
     scored = []
     for sent in sentences:
         sent = sent.strip()
-        if len(sent) < 30 or len(sent) > 500:
+        if len(sent) < 40 or len(sent) > 400:
             continue
-        words = re.findall(r"\b[a-z]+\b", sent.lower())
+        sent_lower = sent.lower()
+        # Skip boilerplate legal disclaimers
+        if any(re.search(p, sent_lower) for p in BOILERPLATE_PATTERNS):
+            continue
+        words = re.findall(r"\b[a-z]+\b", sent_lower)
         if not words:
             continue
         unc_count = sum(1 for w in words if w in UNCERTAINTY_WORDS)
