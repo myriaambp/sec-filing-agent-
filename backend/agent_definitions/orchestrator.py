@@ -1,6 +1,5 @@
 import asyncio
 import json
-import uuid
 from google.adk.agents import Agent
 from google.adk.runners import InMemoryRunner
 from google.genai import types
@@ -62,12 +61,16 @@ async def _run_agent(agent: Agent, message: str, app_name: str = "filinglens") -
     """Run a single agent and return its final text response."""
     runner = InMemoryRunner(agent=agent, app_name=app_name)
     user_id = "user"
-    session_id = str(uuid.uuid4())
+
+    session = await runner.session_service.create_session(
+        app_name=app_name,
+        user_id=user_id,
+    )
 
     final_text = ""
     async for event in runner.run_async(
         user_id=user_id,
-        session_id=session_id,
+        session_id=session.id,
         new_message=types.Content(
             role="user",
             parts=[types.Part(text=message)],
