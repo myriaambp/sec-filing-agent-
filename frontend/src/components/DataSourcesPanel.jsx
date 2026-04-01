@@ -177,24 +177,63 @@ export default function DataSourcesPanel({ dataSources }) {
 
       {/* Price Data Source */}
       <div className="bg-navy-light border border-border rounded-xl p-5">
-        <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider mb-3">
-          Data Sources — Price Data
-        </h3>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">
-            {priceData.source} — {priceData.ticker}
-          </span>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+            Data Sources — Price Data ({priceData.summary?.total_trading_days || 0} trading days)
+          </h3>
           {priceData.url && (
             <a
               href={priceData.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-terminal/70 hover:text-terminal text-xs underline"
+              className="text-terminal/70 hover:text-terminal text-xs font-mono underline"
             >
-              View on Yahoo Finance &#8599;
+              Yahoo Finance &#8599;
             </a>
           )}
         </div>
+
+        {priceData.summary && (
+          <div className="grid grid-cols-4 gap-3 text-xs">
+            {[
+              ["Total Return", `${((priceData.summary.total_return || 0) * 100).toFixed(1)}%`],
+              ["Ann. Volatility", `${((priceData.summary.annualized_volatility || 0) * 100).toFixed(1)}%`],
+              ["Max Drawdown", `${((priceData.summary.max_drawdown || 0) * 100).toFixed(1)}%`],
+              ["Sharpe Ratio", priceData.summary.sharpe_ratio_approx],
+              ["Price Range", `$${priceData.summary.price_low} — $${priceData.summary.price_high}`],
+              ["Current", `$${priceData.summary.price_end}`],
+              ["Avg Volume", (priceData.summary.avg_volume || 0).toLocaleString()],
+              ["Trading Days", priceData.summary.total_trading_days],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <span className="text-gray-600 block">{label}</span>
+                <span className="font-mono text-gray-300">{value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Competitor price summaries */}
+        {priceData.competitor_summaries && Object.entries(priceData.competitor_summaries).map(([ticker, summary]) => (
+          summary && (
+            <div key={ticker} className="mt-3 pt-3 border-t border-white/5">
+              <span className="text-xs font-mono text-gray-500 block mb-2">{ticker}</span>
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                {[
+                  ["Return", `${((summary.total_return || 0) * 100).toFixed(1)}%`],
+                  ["Volatility", `${((summary.annualized_volatility || 0) * 100).toFixed(1)}%`],
+                  ["Drawdown", `${((summary.max_drawdown || 0) * 100).toFixed(1)}%`],
+                  ["Sharpe", summary.sharpe_ratio_approx],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <span className="text-gray-600 block">{label}</span>
+                    <span className="font-mono text-gray-500">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        ))}
       </div>
 
       {/* Raw Scores */}

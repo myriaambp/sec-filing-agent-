@@ -332,6 +332,15 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     memo["language_trend"] = primary_language.get("trend", "unknown")
     memo["uncertainty_score_change"] = f"{primary_language.get('trend_magnitude', 0):+.1f}% vs prior quarter"
 
+    # Compute comprehensive price statistics
+    from tools.fetch_prices import compute_price_summary
+    price_summary = compute_price_summary(primary, period="2y")
+    comp_price_summaries = {}
+    for c in competitor_signals:
+        comp_ticker = c.get("company", "")
+        if comp_ticker:
+            comp_price_summaries[comp_ticker] = compute_price_summary(comp_ticker, period="2y")
+
     # Inject data sources so the frontend can link to raw data
     sources = {
         "primary": {
@@ -343,6 +352,8 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
             "source": "Yahoo Finance",
             "ticker": primary,
             "url": f"https://finance.yahoo.com/quote/{primary}/history/",
+            "summary": price_summary,
+            "competitor_summaries": comp_price_summaries,
         },
         "raw_scores": {
             "primary_quarterly_scores": quarterly_scores,
