@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Google ADK uses GOOGLE_API_KEY env var for Gemini
+# For Vertex AI on GCP, set GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION instead
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse

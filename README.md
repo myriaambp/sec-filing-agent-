@@ -7,14 +7,14 @@ A multi-agent system that performs institutional-grade SEC filing analysis. User
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- OpenAI API key
+- Google Cloud project with Gemini API enabled (or a Google AI Studio API key)
 
 ### Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and add your GOOGLE_API_KEY
 uvicorn main:app --reload --port 8000
 ```
 
@@ -58,7 +58,7 @@ EDA is performed by **two specialized agents running in parallel**:
 2. **Market Signal Agent** (`market_agent.py`): Calls the `compute_market_signal` tool, which correlates filing language scores with subsequent stock returns via `compute_signal.py`. It computes:
    - 30/60-day stock returns after each filing date
    - Whether the stock outperformed the S&P 500
-   - Historical accuracy of the uncertainty→underperformance signal — function `compute_signal_strength()`
+   - Historical accuracy of the uncertainty-to-underperformance signal — function `compute_signal_strength()`
 
 Both agents run simultaneously via `asyncio.gather()` in the orchestrator, along with competitor filing analysis. The EDA adapts to different questions — different tickers, filing types, and competitor sets produce different tool calls and analyses.
 
@@ -71,7 +71,7 @@ The **Analyst Agent** (`analyst_agent.py`) synthesizes all findings into an inst
 - Calls `generate_analyst_memo` tool which runs `generate_recommendation()` to produce a Buy/Sell/Hold signal based on language trend direction, signal strength, and competitor comparison
 - Generates a dual-axis matplotlib chart (`chart_generator.py`) showing uncertainty score vs stock price over time
 - The LLM writes a complete research memo citing specific data points: uncertainty scores, return percentages, filing dates, and competitor comparisons
-- Output is a structured `AnalystMemo` with recommendation, confidence level, key evidence bullets, historical context, and the full memo text
+- Output is a structured JSON object with recommendation, confidence level, key evidence bullets, historical context, and the full memo text
 
 The hypothesis is always grounded in the collected data — every claim cites specific numbers from the EDA phase.
 
@@ -82,11 +82,11 @@ The hypothesis is always grounded in the collected data — every claim cites sp
 | Requirement | Implementation |
 |---|---|
 | **Frontend** | React + Tailwind CSS with dark financial terminal aesthetic. Components: `QueryBar`, `AgentSteps` (live reasoning), `SignalCard` (recommendation), `ChartView`, `EvidencePanel`. Located in `frontend/src/` |
-| **Agent Framework** | OpenAI Agents SDK (`openai-agents`). All agents defined in `backend/agent_definitions/` using `Agent()` class with `function_tool` decorators |
+| **Agent Framework** | Google ADK (`google-adk`) with Gemini 2.0 Flash. All agents defined in `backend/agent_definitions/` using `Agent()` class with plain Python function tools |
 | **Tool Calling** | Five tools: `fetch_and_analyze_filings`, `compute_market_signal`, `generate_analyst_memo` (agent tools), plus underlying utility functions in `backend/tools/` |
 | **Non-Trivial Dataset** | SEC EDGAR contains millions of filings across all public companies. Each filing is thousands of pages. The system retrieves 4-6 filings per company and extracts key sections — far too large to dump into context |
 | **Multi-Agent Pattern** | **Orchestrator → Parallel Fan-Out → Synthesis** pattern. The orchestrator (`backend/agent_definitions/orchestrator.py`) parses the question via a TickerParser agent, fans out to FilingNLPAgent + MarketSignalAgent in parallel via `asyncio.gather()`, then passes results to the AnalystAgent for synthesis. Four distinct agents with different system prompts and responsibilities |
-| **Deployed** | Backend on Railway, frontend on Vercel |
+| **Deployed** | Backend and frontend deployed on GCP Cloud Run |
 | **README** | This document |
 
 ---
@@ -96,10 +96,10 @@ The hypothesis is always grounded in the collected data — every claim cites sp
 ### 1. Structured Output (2.5 pts)
 **Files:** `backend/schemas/language_signal.py`, `backend/schemas/market_signal.py`, `backend/schemas/analyst_memo.py`
 
-Every agent uses Pydantic models as its `output_type`:
-- `FilingNLPAgent` → `LanguageSignal` (quarterly scores, trend, magnitude)
-- `MarketSignalAgent` → `MarketSignal` (correlations, signal strength, accuracy)
-- `AnalystAgent` → `AnalystMemo` (recommendation, evidence, memo, chart)
+Every agent is instructed to return typed JSON matching Pydantic model schemas:
+- `FilingNLPAgent` → `LanguageSignal` schema (quarterly scores, trend, magnitude)
+- `MarketSignalAgent` → `MarketSignal` schema (correlations, signal strength, accuracy)
+- `AnalystAgent` → `AnalystMemo` schema (recommendation, evidence, memo, chart)
 
 All inter-agent communication uses typed JSON schemas. The `TickerParser` agent also returns structured JSON for ticker extraction.
 
@@ -135,36 +135,52 @@ The system uses two distinct data retrieval methods:
 
 ```
 User Question
-     │
-     ▼
-┌─────────────┐
-│ Orchestrator │ ── parses question via TickerParser agent
-└──────┬──────┘
-       │
-       ├──────────────────────────┐  (parallel via asyncio.gather)
-       ▼                          ▼
-┌──────────────┐         ┌────────────────┐
-│ FilingNLP    │         │ MarketSignal   │
-│ Agent        │         │ Agent          │
-│              │         │                │
-│ EDGAR API    │         │ Yahoo Finance  │
-│ NLP Analysis │         │ Return Correl. │
-└──────┬───────┘         └───────┬────────┘
-       │                          │
-       └──────────┬───────────────┘
-                  ▼
-          ┌──────────────┐
-          │ Analyst      │
-          │ Agent        │
-          │              │
-          │ Synthesis    │
-          │ Chart Gen    │
-          │ Memo Writing │
-          └──────┬───────┘
-                 ▼
+     |
+     v
++-------------+
+| Orchestrator | -- parses question via TickerParser agent (Gemini 2.0 Flash)
++------+------+
+       |
+       +------------------------------+  (parallel via asyncio.gather)
+       v                              v
++--------------+             +----------------+
+| FilingNLP    |             | MarketSignal   |
+| Agent        |             | Agent          |
+|              |             |                |
+| EDGAR API    |             | Yahoo Finance  |
+| NLP Analysis |             | Return Correl. |
++------+-------+             +-------+--------+
+       |                              |
+       +----------+-------------------+
+                  v
+          +--------------+
+          | Analyst      |
+          | Agent        |
+          |              |
+          | Synthesis    |
+          | Chart Gen    |
+          | Memo Writing |
+          +------+-------+
+                 v
           AnalystMemo JSON
           (streamed to frontend)
 ```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | Python 3.11+, FastAPI |
+| Agent Framework | Google ADK (`google-adk`) |
+| LLM | Gemini 2.0 Flash via Google AI / Vertex AI |
+| Filing Data | SEC EDGAR API (free, no key needed) |
+| Price Data | Yahoo Finance via `yfinance` (free) |
+| NLP | Rule-based word frequency analysis |
+| Charts | Matplotlib (base64 PNG) |
+| Frontend | React + Tailwind CSS + Vite |
+| Deployment | GCP Cloud Run |
 
 ---
 
@@ -178,16 +194,33 @@ User Question
 
 ---
 
-## Deployment
+## Deployment (GCP Cloud Run)
 
-### Backend (Railway)
-1. Connect GitHub repo to Railway
-2. Set root directory to `backend`
-3. Add `OPENAI_API_KEY` environment variable
-4. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+### Backend
+1. Create a `Dockerfile` in `backend/`:
+   ```dockerfile
+   FROM python:3.11-slim
+   WORKDIR /app
+   COPY requirements.txt .
+   RUN pip install --no-cache-dir -r requirements.txt
+   COPY . .
+   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+   ```
+2. Deploy:
+   ```bash
+   cd backend
+   gcloud run deploy filinglens-api \
+     --source . \
+     --region us-central1 \
+     --allow-unauthenticated \
+     --set-env-vars GOOGLE_API_KEY=your_key
+   ```
 
-### Frontend (Vercel)
-1. Connect GitHub repo to Vercel
-2. Set root directory to `frontend`
-3. Add `VITE_API_URL` environment variable pointing to Railway backend URL
-4. Framework: Vite
+### Frontend
+1. Build and deploy:
+   ```bash
+   cd frontend
+   npm run build
+   # Deploy dist/ as a static site via Cloud Run or Firebase Hosting
+   ```
+2. Set `VITE_API_URL` to the backend Cloud Run URL before building.

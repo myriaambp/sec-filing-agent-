@@ -1,6 +1,9 @@
 import asyncio
 import json
-from agents import Agent, Runner, function_tool
+import uuid
+from google.adk.agents import Agent
+from google.adk.runners import InMemoryRunner
+from google.genai import types
 from agent_definitions.filing_nlp_agent import filing_nlp_agent
 from agent_definitions.market_agent import market_agent
 from agent_definitions.analyst_agent import analyst_agent
@@ -48,10 +51,34 @@ Rules:
 """
 
 ticker_parser = Agent(
-    name="TickerParser",
-    instructions=TICKER_PARSER_PROMPT,
-    model="gpt-4o-mini",
+    model="gemini-2.0-flash",
+    name="ticker_parser",
+    description="Extracts stock ticker symbols from user questions",
+    instruction=TICKER_PARSER_PROMPT,
 )
+
+
+async def _run_agent(agent: Agent, message: str, app_name: str = "filinglens") -> str:
+    """Run a single agent and return its final text response."""
+    runner = InMemoryRunner(agent=agent, app_name=app_name)
+    user_id = "user"
+    session_id = str(uuid.uuid4())
+
+    final_text = ""
+    async for event in runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=types.Content(
+            role="user",
+            parts=[types.Part(text=message)],
+        ),
+    ):
+        if event.is_final_response() and event.content and event.content.parts:
+            for part in event.content.parts:
+                if part.text:
+                    final_text += part.text
+
+    return final_text
 
 
 async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
@@ -62,9 +89,16 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     # Step 1: Parse question to extract tickers
     yield {"type": "step", "agent": "Orchestrator", "message": "Parsing your question..."}
 
-    parse_result = await Runner.run(ticker_parser, input=user_question)
+    parse_output = await _run_agent(ticker_parser, user_question)
     try:
-        parsed = json.loads(parse_result.final_output)
+        # Strip markdown code fences if present
+        clean = parse_output.strip()
+        if clean.startswith("```"):
+            clean = clean.split("\n", 1)[1] if "\n" in clean else clean[3:]
+            if clean.endswith("```"):
+                clean = clean[:-3]
+            clean = clean.strip()
+        parsed = json.loads(clean)
     except (json.JSONDecodeError, TypeError):
         parsed = {"primary_tickers": [], "competitor_tickers": [], "form_type": "10-Q"}
 
@@ -99,15 +133,27 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     }
 
     filing_input = f"Analyze {form_type} filings for ticker {primary}. Fetch and analyze the most recent 6 filings."
+    primary_lang_raw = await _run_agent(filing_nlp_agent, filing_input)
 
-    # Run primary filing analysis
-    primary_filing_result = await Runner.run(filing_nlp_agent, input=filing_input)
-    primary_language = primary_filing_result.final_output
+    # Parse the agent's JSON response
+    try:
+        clean = primary_lang_raw.strip()
+        if clean.startswith("```"):
+            clean = clean.split("\n", 1)[1] if "\n" in clean else clean[3:]
+            if clean.endswith("```"):
+                clean = clean[:-3]
+            clean = clean.strip()
+        primary_language = json.loads(clean)
+    except (json.JSONDecodeError, TypeError):
+        primary_language = {"error": "Failed to parse filing analysis", "raw": primary_lang_raw[:200]}
+
+    filings_count = primary_language.get("filings_analyzed", 0)
+    trend = primary_language.get("trend", "unknown")
 
     yield {
         "type": "step",
         "agent": "FilingNLPAgent",
-        "message": f"Completed {primary} filing analysis: {primary_language.filings_analyzed} filings analyzed, trend: {primary_language.trend}",
+        "message": f"Completed {primary} filing analysis: {filings_count} filings analyzed, trend: {trend}",
     }
 
     # Step 3: Run Market Agent and competitor analysis IN PARALLEL
@@ -118,8 +164,9 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     }
 
     # Prepare market agent input
-    filing_dates = [q.filing_date for q in primary_language.quarterly_scores]
-    uncertainty_scores = [q.uncertainty_score for q in primary_language.quarterly_scores]
+    quarterly_scores = primary_language.get("quarterly_scores", [])
+    filing_dates = [q["filing_date"] for q in quarterly_scores]
+    uncertainty_scores = [q["uncertainty_score"] for q in quarterly_scores]
 
     market_input = (
         f"Analyze market signal for {primary}. "
@@ -128,41 +175,60 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
     )
 
     # Build parallel tasks
-    tasks = [Runner.run(market_agent, input=market_input)]
+    tasks = [_run_agent(market_agent, market_input)]
 
-    # Add competitor filing analysis tasks
     for comp in competitor_tickers:
         comp_input = f"Analyze {form_type} filings for ticker {comp}. Fetch and analyze the most recent 4 filings."
-        tasks.append(Runner.run(filing_nlp_agent, input=comp_input))
+        tasks.append(_run_agent(filing_nlp_agent, comp_input))
 
     # Run all in parallel
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    # Unpack results
-    market_result = results[0]
-    if isinstance(market_result, Exception):
-        yield {"type": "step", "agent": "MarketSignalAgent", "message": f"Market analysis encountered an issue: {str(market_result)}"}
-        market_signal = None
+    # Unpack market result
+    market_signal = {}
+    market_raw = results[0]
+    if isinstance(market_raw, Exception):
+        yield {"type": "step", "agent": "MarketSignalAgent", "message": f"Market analysis issue: {str(market_raw)}"}
     else:
-        market_signal = market_result.final_output
-        yield {
-            "type": "step",
-            "agent": "MarketSignalAgent",
-            "message": f"Market signal: {market_signal.signal_strength} — {market_signal.historical_accuracy[:100]}...",
-        }
-
-    competitor_signals = []
-    for i, comp in enumerate(competitor_tickers):
-        comp_result = results[1 + i]
-        if isinstance(comp_result, Exception):
-            yield {"type": "step", "agent": "FilingNLPAgent", "message": f"Competitor {comp} analysis failed: {str(comp_result)}"}
-        else:
-            competitor_signals.append(comp_result.final_output)
+        try:
+            clean = market_raw.strip()
+            if clean.startswith("```"):
+                clean = clean.split("\n", 1)[1] if "\n" in clean else clean[3:]
+                if clean.endswith("```"):
+                    clean = clean[:-3]
+                clean = clean.strip()
+            market_signal = json.loads(clean)
             yield {
                 "type": "step",
-                "agent": "FilingNLPAgent",
-                "message": f"Competitor {comp}: trend {comp_result.final_output.trend}, {comp_result.final_output.filings_analyzed} filings",
+                "agent": "MarketSignalAgent",
+                "message": f"Market signal: {market_signal.get('signal_strength', 'unknown')} — {market_signal.get('historical_accuracy', '')[:100]}",
             }
+        except (json.JSONDecodeError, TypeError):
+            yield {"type": "step", "agent": "MarketSignalAgent", "message": "Market analysis completed (parsing issue)"}
+
+    # Unpack competitor results
+    competitor_signals = []
+    for i, comp in enumerate(competitor_tickers):
+        comp_raw = results[1 + i]
+        if isinstance(comp_raw, Exception):
+            yield {"type": "step", "agent": "FilingNLPAgent", "message": f"Competitor {comp} analysis failed: {str(comp_raw)}"}
+        else:
+            try:
+                clean = comp_raw.strip()
+                if clean.startswith("```"):
+                    clean = clean.split("\n", 1)[1] if "\n" in clean else clean[3:]
+                    if clean.endswith("```"):
+                        clean = clean[:-3]
+                    clean = clean.strip()
+                comp_data = json.loads(clean)
+                competitor_signals.append(comp_data)
+                yield {
+                    "type": "step",
+                    "agent": "FilingNLPAgent",
+                    "message": f"Competitor {comp}: trend {comp_data.get('trend', 'unknown')}, {comp_data.get('filings_analyzed', 0)} filings",
+                }
+            except (json.JSONDecodeError, TypeError):
+                yield {"type": "step", "agent": "FilingNLPAgent", "message": f"Competitor {comp} completed (parsing issue)"}
 
     # Step 4: Run Analyst Agent to synthesize
     yield {
@@ -171,27 +237,45 @@ async def run_analysis(user_question: str) -> AsyncGenerator[dict, None]:
         "message": "Synthesizing findings into research memo...",
     }
 
-    # Serialize data for analyst agent
-    primary_lang_json = primary_language.model_dump_json()
-    market_json = market_signal.model_dump_json() if market_signal else "{}"
-    comp_json = json.dumps([c.model_dump() for c in competitor_signals])
-
     analyst_input = (
-        f"Generate an analyst memo for {primary} ({primary_language.company_name}).\n\n"
-        f"Primary Language Analysis:\n{primary_lang_json}\n\n"
-        f"Market Signal Analysis:\n{market_json}\n\n"
-        f"Competitor Language Analysis:\n{comp_json}\n\n"
+        f"Generate an analyst memo for {primary} ({primary_language.get('company_name', primary)}).\n\n"
+        f"Primary Language Analysis:\n{json.dumps(primary_language, indent=2)}\n\n"
+        f"Market Signal Analysis:\n{json.dumps(market_signal, indent=2)}\n\n"
+        f"Competitor Language Analysis:\n{json.dumps(competitor_signals, indent=2)}\n\n"
         f"Original question: {user_question}"
     )
 
-    analyst_result = await Runner.run(analyst_agent, input=analyst_input)
-    memo = analyst_result.final_output
+    analyst_raw = await _run_agent(analyst_agent, analyst_input)
+
+    try:
+        clean = analyst_raw.strip()
+        if clean.startswith("```"):
+            clean = clean.split("\n", 1)[1] if "\n" in clean else clean[3:]
+            if clean.endswith("```"):
+                clean = clean[:-3]
+            clean = clean.strip()
+        memo = json.loads(clean)
+    except (json.JSONDecodeError, TypeError):
+        memo = {
+            "company": primary,
+            "company_name": primary_language.get("company_name", primary),
+            "competitors_analyzed": competitor_tickers,
+            "recommendation": "HOLD",
+            "signal": "CAUTIONARY",
+            "confidence": 0.5,
+            "language_trend": trend,
+            "uncertainty_score_change": f"{primary_language.get('trend_magnitude', 0):.1f}%",
+            "key_evidence": ["Analysis completed but structured output parsing failed"],
+            "historical_context": market_signal.get("historical_accuracy", ""),
+            "competitor_comparison": "",
+            "full_memo": analyst_raw,
+            "chart_base64": "",
+        }
 
     yield {
         "type": "step",
         "agent": "AnalystAgent",
-        "message": f"Analysis complete: {memo.recommendation} ({memo.signal}) with {int(memo.confidence * 100)}% confidence",
+        "message": f"Analysis complete: {memo.get('recommendation', 'N/A')} ({memo.get('signal', 'N/A')}) with {int(memo.get('confidence', 0) * 100)}% confidence",
     }
 
-    # Step 5: Return final result
-    yield {"type": "result", "data": memo.model_dump()}
+    yield {"type": "result", "data": memo}

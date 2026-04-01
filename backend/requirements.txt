@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
-openai-agents
-openai
+google-adk
+google-genai
 yfinance
 matplotlib
 pandas

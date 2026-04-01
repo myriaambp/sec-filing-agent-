@@ -1,26 +1,40 @@
-from agents import Agent, function_tool
+from google.adk.agents import Agent
 from tools.fetch_prices import fetch_price_history, compute_returns_around_date
 from tools.compute_signal import correlate_language_with_returns, compute_signal_strength
-from schemas.market_signal import MarketSignal
 import json
 
 
 MARKET_SYSTEM_PROMPT = """You are a quantitative market signal analyst. Your job is to:
 1. Use the compute_market_signal tool to analyze how a company's stock performed after each SEC filing.
 2. The tool correlates filing language uncertainty scores with subsequent stock returns.
-3. Use the results to populate your structured MarketSignal output.
+3. Examine the correlation data and assess signal strength.
 
-When given a ticker, filing dates, and uncertainty scores:
-- Call the tool with those parameters
-- Examine the correlation data
-- Determine if uncertainty in filings has historically predicted stock underperformance
-- Assess the signal strength (strong, moderate, or weak)
+Return your analysis as JSON matching this exact schema:
 
-Focus on whether the relationship is consistent enough to be actionable.
+{
+  "company": "TICKER",
+  "correlations": [
+    {
+      "period": "2024-10",
+      "uncertainty_score": 0.65,
+      "return_30d": 0.05,
+      "return_60d": 0.08,
+      "sp500_return_30d": 0.03,
+      "outperformed": true
+    }
+  ],
+  "historical_accuracy": "description of predictive accuracy",
+  "avg_30d_return_on_high_uncertainty": -0.02,
+  "avg_30d_return_on_low_uncertainty": 0.06,
+  "signal_strength": "strong",
+  "summary": "2-3 sentence summary"
+}
+
+Focus on whether uncertainty in filings historically predicted stock underperformance.
+Return ONLY the JSON, no other text.
 """
 
 
-@function_tool
 def compute_market_signal(
     ticker: str, filing_dates: list, uncertainty_scores: list
 ) -> str:
@@ -37,7 +51,6 @@ def compute_market_signal(
     if price_df.empty:
         return json.dumps({"error": f"No price data found for {ticker}"})
 
-    # Build quarterly scores and price returns
     quarterly_scores = []
     price_returns = []
     for date_str, unc_score in zip(filing_dates, uncertainty_scores):
@@ -64,9 +77,9 @@ def compute_market_signal(
 
 
 market_agent = Agent(
-    name="MarketSignalAgent",
-    instructions=MARKET_SYSTEM_PROMPT,
+    model="gemini-2.0-flash",
+    name="market_signal_agent",
+    description="Analyzes stock price performance after SEC filings to find predictive signals from language uncertainty",
+    instruction=MARKET_SYSTEM_PROMPT,
     tools=[compute_market_signal],
-    output_type=MarketSignal,
-    model="gpt-4o",
 )
