@@ -1,5 +1,7 @@
 # FilingLens — SEC Intelligence Platform
 
+**Live Demo:** [https://filinglens-frontend-879618059262.us-central1.run.app](https://filinglens-frontend-879618059262.us-central1.run.app)
+
 A multi-agent system that performs institutional-grade SEC filing analysis. Users ask a question about any public company, and the system fetches real filings from EDGAR, analyzes how management language has shifted, correlates language signals with stock price performance, and delivers a structured Buy/Sell/Hold recommendation with evidence and visualizations.
 
 ## Quick Start
@@ -7,14 +9,15 @@ A multi-agent system that performs institutional-grade SEC filing analysis. User
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- Google Cloud project with Gemini API enabled (or a Google AI Studio API key)
+- GCP project with Vertex AI enabled (or a Google AI Studio API key)
 
 ### Backend Setup
 ```bash
 cd backend
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env and add your GOOGLE_API_KEY
+# Edit .env — set GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION, GOOGLE_GENAI_USE_VERTEXAI
+# For local dev, also run: gcloud auth application-default login
 uvicorn main:app --reload --port 8000
 ```
 
@@ -37,9 +40,9 @@ The frontend runs at `http://localhost:5173` and the backend at `http://localhos
 
 The system collects data from **two external sources** at runtime:
 
-1. **SEC EDGAR API** (`fetch_filings.py`): Fetches real 10-Q and 10-K filings for any public company. The `get_cik_for_ticker()` function resolves tickers to CIK numbers, `fetch_recent_filings()` retrieves filing metadata from the EDGAR submissions API, and `fetch_filing_text()` downloads and parses the actual filing HTML — extracting the MD&A (Management Discussion & Analysis) and Risk Factors sections using BeautifulSoup. No API key required; EDGAR is a free public API with millions of filings.
+1. **SEC EDGAR API** (`fetch_filings.py`): Fetches real 10-Q and 10-K filings for any public company. The `get_cik_for_ticker()` function resolves tickers to CIK numbers, `fetch_recent_filings()` retrieves filing metadata from the EDGAR submissions API, and `fetch_filing_text()` downloads and parses the actual filing HTML — extracting the MD&A (Management Discussion & Analysis) and Risk Factors sections using BeautifulSoup. No API key required; EDGAR is a free public API with millions of filings. A single query fetches 18 filings (6 per company x 3 companies), totaling ~500K characters (~125K tokens) of filing text from a source of 3M+ characters of raw filing data.
 
-2. **Yahoo Finance** (`fetch_prices.py`): Fetches up to 3 years of daily stock price data via the `yfinance` library. The `compute_returns_around_date()` function calculates 30-day and 60-day stock returns after each filing date, plus S&P 500 (SPY) returns as a benchmark.
+2. **Yahoo Finance** (`fetch_prices.py`): Fetches up to 3 years of daily OHLCV stock price data via the `yfinance` library. The system computes 30/60-day post-filing returns, pre/post filing volatility, volume spikes, and comprehensive price statistics (total return, annualized volatility, max drawdown, Sharpe ratio) across the full 500+ trading day dataset. The `compute_returns_around_date()` function also benchmarks against the S&P 500 (SPY).
 
 Data collection is fully dynamic — the user's question determines which companies and filing types are fetched.
 
@@ -50,14 +53,15 @@ Data collection is fully dynamic — the user's question determines which compan
 EDA is performed by **two specialized agents running in parallel**:
 
 1. **Filing NLP Agent** (`filing_nlp_agent.py`): Calls the `fetch_and_analyze_filings` tool, which retrieves SEC filings and runs rule-based NLP analysis via `analyze_language.py`. The analysis computes:
-   - **Uncertainty score**: Ratio of uncertainty/hedging words (may, might, risk, adverse, etc.) — function `compute_uncertainty_score()`
-   - **Sentiment score**: Net confidence minus uncertainty, normalized — function `compute_sentiment_score()`
-   - **Key risk phrases**: Sentences with highest uncertainty word density — function `extract_key_risk_phrases()`
+   - **Uncertainty score**: Ratio of uncertainty/hedging words (may, might, risk, adverse, etc.) scaled to 0-1 — function `compute_uncertainty_score()`
+   - **Sentiment score**: Net confidence minus uncertainty, normalized to -1 to +1 — function `compute_sentiment_score()`
+   - **Key risk phrases**: Sentences with highest uncertainty word density, filtered for boilerplate — function `extract_key_risk_phrases()`
    - **Quarterly trend**: Whether uncertainty is improving, deteriorating, or stable — function `compute_trend()`
 
 2. **Market Signal Agent** (`market_agent.py`): Calls the `compute_market_signal` tool, which correlates filing language scores with subsequent stock returns via `compute_signal.py`. It computes:
    - 30/60-day stock returns after each filing date
    - Whether the stock outperformed the S&P 500
+   - Pre/post filing volatility changes and volume spikes
    - Historical accuracy of the uncertainty-to-underperformance signal — function `compute_signal_strength()`
 
 Both agents run simultaneously via `asyncio.gather()` in the orchestrator, along with competitor filing analysis. The EDA adapts to different questions — different tickers, filing types, and competitor sets produce different tool calls and analyses.
@@ -68,12 +72,18 @@ Both agents run simultaneously via `asyncio.gather()` in the orchestrator, along
 
 The **Analyst Agent** (`analyst_agent.py`) synthesizes all findings into an institutional-quality research memo:
 
-- Calls `generate_analyst_memo` tool which runs `generate_recommendation()` to produce a Buy/Sell/Hold signal based on language trend direction, signal strength, and competitor comparison
+- The `generate_recommendation()` function in `compute_signal.py` produces a Buy/Sell/Hold signal with data-driven confidence computed from 6 factors: signal strength, trend magnitude, filing count, trend consistency, return spread, and competitor divergence
 - Generates a dual-axis matplotlib chart (`chart_generator.py`) showing uncertainty score vs stock price over time
-- The LLM writes a complete research memo citing specific data points: uncertainty scores, return percentages, filing dates, and competitor comparisons
-- Output is a structured JSON object with recommendation, confidence level, key evidence bullets, historical context, and the full memo text
+- The LLM writes a structured research memo with sections: Investment Thesis, Language Trend Analysis, Market Signal Analysis, Competitive Landscape, Risk Factors, and Conclusion
+- Output includes recommendation, confidence level, key evidence bullets, historical context, competitor comparison, the full memo, and a chart
 
 The hypothesis is always grounded in the collected data — every claim cites specific numbers from the EDA phase.
+
+**Downloadable outputs:**
+- Full research report (HTML, printable as PDF) with methodology, appendices, and data tables
+- Filing sources CSV with direct EDGAR links
+- Analysis scores CSV with quarterly uncertainty/sentiment data
+- Raw data CSV with full dataset including extracted risk phrases
 
 ---
 
@@ -81,12 +91,12 @@ The hypothesis is always grounded in the collected data — every claim cites sp
 
 | Requirement | Implementation |
 |---|---|
-| **Frontend** | React + Tailwind CSS with dark financial terminal aesthetic. Components: `QueryBar`, `AgentSteps` (live reasoning), `SignalCard` (recommendation), `ChartView`, `EvidencePanel`. Located in `frontend/src/` |
-| **Agent Framework** | Google ADK (`google-adk`) with Gemini 2.0 Flash. All agents defined in `backend/agent_definitions/` using `Agent()` class with plain Python function tools |
-| **Tool Calling** | Five tools: `fetch_and_analyze_filings`, `compute_market_signal`, `generate_analyst_memo` (agent tools), plus underlying utility functions in `backend/tools/` |
-| **Non-Trivial Dataset** | SEC EDGAR contains millions of filings across all public companies. Each filing is thousands of pages. The system retrieves 4-6 filings per company and extracts key sections — far too large to dump into context |
+| **Frontend** | React + Tailwind CSS with dark financial terminal aesthetic. Components: `QueryBar`, `AgentSteps` (live reasoning), `SignalCard` (recommendation), `ChartView`, `EvidencePanel`, `DataSourcesPanel`, `HowItWorks`. Located in `frontend/src/` |
+| **Agent Framework** | Google ADK (`google-adk`) with Gemini 2.0 Flash via Vertex AI. All agents defined in `backend/agent_definitions/` using `Agent()` class with plain Python function tools |
+| **Tool Calling** | Three agent tools: `fetch_and_analyze_filings`, `compute_market_signal`, `generate_analyst_memo`. Plus underlying utility functions in `backend/tools/` for EDGAR fetching, price analysis, NLP, and signal computation |
+| **Non-Trivial Dataset** | SEC EDGAR: 3M+ characters of filing text per query (18 filings across 3 companies). Each full 10-Q is ~168K chars / ~42K tokens — far too large to dump into context. Yahoo Finance: 500+ trading days of OHLCV per ticker with derived statistics computed across the full history |
 | **Multi-Agent Pattern** | **Orchestrator → Parallel Fan-Out → Synthesis** pattern. The orchestrator (`backend/agent_definitions/orchestrator.py`) parses the question via a TickerParser agent, fans out to FilingNLPAgent + MarketSignalAgent in parallel via `asyncio.gather()`, then passes results to the AnalystAgent for synthesis. Four distinct agents with different system prompts and responsibilities |
-| **Deployed** | Backend and frontend deployed on GCP Cloud Run |
+| **Deployed** | Frontend: [filinglens-frontend-879618059262.us-central1.run.app](https://filinglens-frontend-879618059262.us-central1.run.app) / Backend API: [filinglens-api-879618059262.us-central1.run.app](https://filinglens-api-879618059262.us-central1.run.app) — both on GCP Cloud Run |
 | **README** | This document |
 
 ---
@@ -127,7 +137,16 @@ Results are awaited together and aggregated before being passed to the AnalystAg
 ### 4. Second Data Retrieval Method (2.5 pts)
 The system uses two distinct data retrieval methods:
 1. **SEC EDGAR API** for filing text (`backend/tools/fetch_filings.py`)
-2. **Yahoo Finance API** for stock price data (`backend/tools/fetch_prices.py`)
+2. **Yahoo Finance API** for stock price data (`backend/tools/fetch_prices.py`) — computes total return, annualized volatility, max drawdown, Sharpe ratio, and volume analysis across the full price history
+
+### 5. Artifacts (2.5 pts)
+**File:** `frontend/src/components/EvidencePanel.jsx`
+
+The system generates persistent downloadable outputs:
+- **Full research report** (styled HTML, printable as PDF) with methodology, data tables, chart, appendices, and filing source links
+- **Filing sources CSV** with direct EDGAR links to every filing analyzed
+- **Analysis scores CSV** with quarterly uncertainty and sentiment data
+- **Raw data CSV** with the complete dataset including extracted risk phrases and filing URLs
 
 ---
 
@@ -174,13 +193,13 @@ User Question
 |---|---|
 | Backend | Python 3.11+, FastAPI |
 | Agent Framework | Google ADK (`google-adk`) |
-| LLM | Gemini 2.0 Flash via Google AI / Vertex AI |
+| LLM | Gemini 2.0 Flash via Vertex AI |
 | Filing Data | SEC EDGAR API (free, no key needed) |
 | Price Data | Yahoo Finance via `yfinance` (free) |
-| NLP | Rule-based word frequency analysis |
-| Charts | Matplotlib (base64 PNG) |
-| Frontend | React + Tailwind CSS + Vite |
-| Deployment | GCP Cloud Run |
+| NLP | Rule-based word frequency analysis (uncertainty/confidence word sets) |
+| Charts | Matplotlib (base64 PNG, dual-axis) |
+| Frontend | React 18 + Tailwind CSS + Vite |
+| Deployment | GCP Cloud Run (backend + frontend) |
 
 ---
 
@@ -194,33 +213,37 @@ User Question
 
 ---
 
-## Deployment (GCP Cloud Run)
+## Deployment
 
-### Backend
-1. Create a `Dockerfile` in `backend/`:
-   ```dockerfile
-   FROM python:3.11-slim
-   WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-   COPY . .
-   CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
-   ```
-2. Deploy:
-   ```bash
-   cd backend
-   gcloud run deploy filinglens-api \
-     --source . \
-     --region us-central1 \
-     --allow-unauthenticated \
-     --set-env-vars GOOGLE_API_KEY=your_key
-   ```
+Both services are deployed on **GCP Cloud Run** in `us-central1`.
 
-### Frontend
-1. Build and deploy:
-   ```bash
-   cd frontend
-   npm run build
-   # Deploy dist/ as a static site via Cloud Run or Firebase Hosting
-   ```
-2. Set `VITE_API_URL` to the backend Cloud Run URL before building.
+| Service | URL |
+|---|---|
+| Frontend | https://filinglens-frontend-879618059262.us-central1.run.app |
+| Backend API | https://filinglens-api-879618059262.us-central1.run.app |
+
+### Redeploy Backend
+```bash
+cd backend
+gcloud run deploy filinglens-api \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars "GOOGLE_CLOUD_PROJECT=agentic-ai-for-analytics,GOOGLE_CLOUD_LOCATION=us-central1,GOOGLE_GENAI_USE_VERTEXAI=TRUE" \
+  --memory 1Gi \
+  --timeout 300 \
+  --project agentic-ai-for-analytics
+```
+
+### Redeploy Frontend
+```bash
+cd frontend
+gcloud run deploy filinglens-frontend \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --memory 256Mi \
+  --project agentic-ai-for-analytics
+```
+
+The frontend Dockerfile bakes in the backend API URL at build time. The backend uses Vertex AI with the Cloud Run service account — no API keys needed in production.
