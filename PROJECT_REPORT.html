@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FilingLens — Project Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @page { size: A4; margin: 18mm 22mm; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b;
+    line-height: 1.7;
+    padding: 48px 60px;
+    max-width: 880px;
+    margin: 0 auto;
+    font-size: 12.5px;
+  }
+
+  /* Cover */
+  .cover { text-align: center; padding: 80px 0 60px; page-break-after: always; }
+  .cover h1 { font-size: 42px; font-weight: 700; letter-spacing: -1px; color: #0f172a; }
+  .cover .subtitle { font-size: 18px; color: #64748b; margin: 8px 0 32px; }
+  .cover .meta { font-size: 13px; color: #94a3b8; line-height: 2; }
+  .cover .meta strong { color: #475569; }
+  .cover .url { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #2563eb; margin-top: 24px; display: block; }
+
+  /* Headings */
+  h2 {
+    font-size: 20px; font-weight: 700; color: #0f172a;
+    margin: 40px 0 16px; padding-bottom: 6px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  h3 {
+    font-size: 15px; font-weight: 600; color: #1e293b;
+    margin: 28px 0 10px;
+  }
+  h4 {
+    font-size: 13px; font-weight: 600; color: #334155;
+    margin: 20px 0 6px;
+  }
+
+  p { margin: 8px 0; }
+
+  /* Tables */
+  table {
+    width: 100%; border-collapse: collapse;
+    margin: 12px 0 20px; font-size: 11.5px;
+  }
+  thead th {
+    text-align: left; padding: 8px 10px;
+    background: #f1f5f9; border-bottom: 2px solid #cbd5e1;
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #64748b;
+  }
+  td { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+
+  /* Code */
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; background: #f1f5f9;
+    padding: 1px 5px; border-radius: 3px; color: #334155;
+  }
+  pre {
+    background: #0f172a; color: #e2e8f0;
+    padding: 16px 20px; border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; line-height: 1.6;
+    margin: 12px 0 20px; overflow-x: auto;
+    white-space: pre-wrap;
+  }
+
+  /* Lists */
+  ul, ol { padding-left: 22px; margin: 8px 0 16px; }
+  li { margin: 4px 0; }
+
+  /* Callout boxes */
+  .box {
+    background: #f8fafc; border-left: 3px solid #2563eb;
+    padding: 14px 18px; border-radius: 0 6px 6px 0;
+    margin: 14px 0;
+  }
+  .box-green { border-left-color: #10b981; background: #ecfdf5; }
+  .box-amber { border-left-color: #f59e0b; background: #fffbeb; }
+  .box-gray { border-left-color: #94a3b8; background: #f1f5f9; }
+
+  /* Architecture diagram */
+  .diagram {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; line-height: 1.5;
+    background: #f8fafc; padding: 20px;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    margin: 16px 0; white-space: pre;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 48px; padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 10px; color: #94a3b8;
+  }
+
+  a { color: #2563eb; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { color: #0f172a; }
+
+  .page-break { page-break-before: always; }
+
+  @media print {
+    body { padding: 0; }
+    .cover { padding: 120px 0 80px; }
+    pre { break-inside: avoid; }
+    table { break-inside: avoid; }
+    h2, h3 { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover">
+  <h1>FilingLens</h1>
+  <div class="subtitle">SEC Filing Language Analysis Platform</div>
+  <p style="font-size:14px; color:#475569; margin-bottom:40px;">
+    A Multi-Agent Data Analyst System for<br>
+    Institutional-Grade SEC Filing Intelligence
+  </p>
+  <div class="meta">
+    <strong>Course:</strong> IEOR E4576 — Agentic AI for Analytics<br>
+    <strong>Project:</strong> Project 2 — Data Analyst Agent<br>
+    <strong>Author:</strong> Myriam Bengoechea Pardo<br>
+    <strong>Date:</strong> April 2026<br>
+    <strong>University:</strong> Columbia University
+  </div>
+  <a class="url" href="https://filinglens-frontend-879618059262.us-central1.run.app">
+    https://filinglens-frontend-879618059262.us-central1.run.app
+  </a>
+  <p style="margin-top:8px; font-size:11px; color:#94a3b8;">
+    GitHub: <a href="https://github.com/myriaambp/sec-filing-agent-">github.com/myriaambp/sec-filing-agent-</a>
+  </p>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<h2>Table of Contents</h2>
+<ol style="font-size:13px; line-height:2.2;">
+  <li><a href="#overview">Project Overview</a></li>
+  <li><a href="#architecture">System Architecture</a></li>
+  <li><a href="#step1">Step 1: Data Collection</a></li>
+  <li><a href="#step2">Step 2: Exploratory Data Analysis</a></li>
+  <li><a href="#step3">Step 3: Hypothesis Formation</a></li>
+  <li><a href="#core">Core Requirements Implementation</a></li>
+  <li><a href="#grabbag">Grab-Bag Features</a></li>
+  <li><a href="#techstack">Tech Stack</a></li>
+  <li><a href="#agents">Agent Design &amp; Prompts</a></li>
+  <li><a href="#nlp">NLP Methodology</a></li>
+  <li><a href="#confidence">Confidence Score Methodology</a></li>
+  <li><a href="#frontend">Frontend Design</a></li>
+  <li><a href="#deployment">Deployment</a></li>
+  <li><a href="#testing">Testing &amp; Edge Cases</a></li>
+  <li><a href="#limitations">Limitations &amp; Future Work</a></li>
+  <li><a href="#filemap">File Map</a></li>
+</ol>
+
+<!-- ==================== 1. OVERVIEW ==================== -->
+<h2 id="overview">1. Project Overview</h2>
+
+<p>FilingLens is a multi-agent AI system that acts as an institutional-grade SEC filing analyst. A user asks a natural language question about any public company (e.g., <em>"Should we be long or short on Nvidia going into next quarter?"</em>), and the system:</p>
+
+<ol>
+  <li><strong>Collects</strong> real SEC filings from EDGAR and stock price data from Yahoo Finance at runtime</li>
+  <li><strong>Explores</strong> the data by analyzing management language shifts, computing market signal correlations, and comparing against competitors — all via parallel AI agent execution</li>
+  <li><strong>Hypothesizes</strong> by generating a structured Buy/Sell/Hold recommendation with a data-driven confidence score, a research memo, a visualization, and downloadable data artifacts</li>
+</ol>
+
+<p>The system uses <strong>Google ADK</strong> (Agent Development Kit) as the agent framework with <strong>Gemini 2.0 Flash</strong> via Vertex AI as the LLM. Four distinct agents coordinate through an orchestrator using a parallel fan-out pattern. The frontend is a React application with a dark financial terminal aesthetic, deployed on GCP Cloud Run.</p>
+
+<div class="box">
+  <strong>Key Differentiator:</strong> Unlike generic LLM chatbots, FilingLens never answers from model weights. Every claim is grounded in real data fetched at runtime — specific uncertainty scores, filing dates, return percentages, and word counts that the user can verify via linked EDGAR filings and downloadable CSVs.
+</div>
+
+<!-- ==================== 2. ARCHITECTURE ==================== -->
+<h2 id="architecture" class="page-break">2. System Architecture</h2>
+
+<h3>High-Level Flow</h3>
+<div class="diagram">User Question
+     │
+     ▼
+┌─────────────────┐
+│   Orchestrator   │ ── Parses question via TickerParser agent
+│  (Python async)  │    Extracts ticker(s), competitors, form type
+└────────┬────────┘
+         │
+         ├────────────────────────────┐  (parallel via asyncio.gather)
+         ▼                            ▼
+┌──────────────────┐       ┌────────────────────┐
+│  FilingNLP Agent │       │  MarketSignal Agent │
+│                  │       │                    │
+│  • EDGAR API     │       │  • Yahoo Finance   │
+│  • HTML parsing  │       │  • Return calc     │
+│  • NLP scoring   │       │  • Volatility      │
+│  • Trend detect  │       │  • Signal strength │
+└────────┬─────────┘       └─────────┬──────────┘
+         │                            │
+         └──────────┬─────────────────┘
+                    ▼
+           ┌──────────────┐
+           │ Analyst Agent │
+           │               │
+           │ • Synthesis   │
+           │ • Memo write  │
+           │ • Chart gen   │
+           │ • Confidence  │
+           └───────┬───────┘
+                   ▼
+            AnalystMemo JSON
+            (streamed to React frontend)</div>
+
+<h3>Multi-Agent Pattern: Orchestrator → Parallel Fan-Out → Synthesis</h3>
+
+<p>The system implements a <strong>four-agent architecture</strong> where each agent has a distinct role, system prompt, and set of tools:</p>
+
+<table>
+  <thead><tr><th>Agent</th><th>Model</th><th>Role</th><th>Tools</th><th>File</th></tr></thead>
+  <tbody>
+    <tr><td><strong>TickerParser</strong></td><td>Gemini 2.0 Flash</td><td>Extract ticker symbols and form type from natural language</td><td>None (text-only)</td><td><code>orchestrator.py</code></td></tr>
+    <tr><td><strong>FilingNLPAgent</strong></td><td>Gemini 2.0 Flash</td><td>Fetch SEC filings from EDGAR and analyze language</td><td><code>fetch_and_analyze_filings</code></td><td><code>filing_nlp_agent.py</code></td></tr>
+    <tr><td><strong>MarketSignalAgent</strong></td><td>Gemini 2.0 Flash</td><td>Compute stock return correlations with language</td><td><code>compute_market_signal</code></td><td><code>market_agent.py</code></td></tr>
+    <tr><td><strong>AnalystAgent</strong></td><td>Gemini 2.0 Flash</td><td>Synthesize findings into research memo</td><td><code>generate_analyst_memo</code></td><td><code>analyst_agent.py</code></td></tr>
+  </tbody>
+</table>
+
+<p>The orchestrator (<code>backend/agent_definitions/orchestrator.py</code>) is <strong>not an LLM agent</strong> — it's a plain Python async function that coordinates the agents programmatically. This is deliberate: orchestration logic (which agents to call, in what order, with what data) should be deterministic, not left to LLM judgment.</p>
+
+<!-- ==================== 3. STEP 1: COLLECT ==================== -->
+<h2 id="step1" class="page-break">3. Step 1: Data Collection</h2>
+
+<h3>3.1 SEC EDGAR API</h3>
+<p><strong>File:</strong> <code>backend/tools/fetch_filings.py</code></p>
+
+<p>The system fetches real SEC filings from the EDGAR database at runtime. No data is pre-cached or hard-coded.</p>
+
+<h4>Data Flow</h4>
+<ol>
+  <li><code>get_cik_for_ticker(ticker)</code> — Resolves a stock ticker (e.g., "NVDA") to a SEC CIK number by fetching <code>https://www.sec.gov/files/company_tickers.json</code></li>
+  <li><code>fetch_recent_filings(ticker, form_type, num_filings)</code> — Fetches filing metadata from <code>https://data.sec.gov/submissions/CIK{cik}.json</code>, returning accession numbers, filing dates, periods, and primary document names</li>
+  <li><code>fetch_filing_text(accession_number, cik, primary_doc)</code> — Downloads the actual filing HTML from <code>https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{doc}</code>, strips HTML with BeautifulSoup, and extracts the MD&amp;A and Risk Factors sections using regex pattern matching</li>
+</ol>
+
+<h4>Section Extraction</h4>
+<p>The <code>_extract_key_sections()</code> function identifies section boundaries in the filing text using regex patterns. It searches for:</p>
+<ul>
+  <li><strong>Risk Factors</strong> (Item 1A in 10-K, Item 1A in 10-Q): patterns like <code>item\s+1a[\.\s\-\:]+risk\s+factors</code></li>
+  <li><strong>MD&amp;A</strong> (Item 7 in 10-K, Item 2 in 10-Q): patterns like <code>management.s\s+discussion\s+and\s+analysis</code></li>
+</ul>
+<p>It skips table-of-contents matches by iterating from the last occurrence backward and requiring the extracted section to be at least 500 characters.</p>
+
+<h4>Data Volume</h4>
+<div class="box-green box">
+  <strong>Per query:</strong> 18 filings fetched (6 per company × 3 companies), totaling ~500,000 characters (~125,000 tokens) of extracted filing text. The full unextracted filings total ~3,000,000 characters (~758,000 tokens) — far too large to fit in any LLM's context window. This satisfies the "non-trivial dataset" requirement.
+</div>
+
+<h3>3.2 Yahoo Finance API</h3>
+<p><strong>File:</strong> <code>backend/tools/fetch_prices.py</code></p>
+
+<p>Stock price data is fetched via the <code>yfinance</code> Python library. For each company analyzed (primary + competitors + S&amp;P 500 benchmark), the system fetches 2-3 years of daily OHLCV data.</p>
+
+<h4>Computations Over Price Data</h4>
+<table>
+  <thead><tr><th>Function</th><th>What It Computes</th><th>Data Used</th></tr></thead>
+  <tbody>
+    <tr><td><code>compute_returns_around_date()</code></td><td>30-day and 60-day stock returns after each filing date, benchmarked against SPY</td><td>Close prices around filing dates</td></tr>
+    <tr><td><code>_compute_volatility()</code></td><td>Annualized realized volatility (std of daily returns × √252) for 30 days pre and post filing</td><td>All daily returns in 60-day window</td></tr>
+    <tr><td><code>_compute_volume_spike()</code></td><td>Whether trading volume spiked on filing date vs 20-day average</td><td>Volume data for 30-day window</td></tr>
+    <tr><td><code>compute_price_summary()</code></td><td>Total return, annualized volatility, max drawdown, Sharpe ratio, avg/max volume</td><td><strong>Entire 500+ day price history</strong></td></tr>
+  </tbody>
+</table>
+
+<h4>Data Volume</h4>
+<p>Per ticker: 500+ trading days × 6 columns (Date, Open, High, Low, Close, Volume) = 3,000+ data points. For a typical query with 3 companies + SPY: ~12,000+ raw price data points, plus derived statistics computed across the full history.</p>
+
+<!-- ==================== 4. STEP 2: EDA ==================== -->
+<h2 id="step2" class="page-break">4. Step 2: Exploratory Data Analysis</h2>
+
+<p>EDA is performed by two specialized agents running <strong>in parallel</strong> via <code>asyncio.gather()</code>.</p>
+
+<h3>4.1 Filing NLP Agent</h3>
+<p><strong>File:</strong> <code>backend/agent_definitions/filing_nlp_agent.py</code><br>
+<strong>Tool:</strong> <code>fetch_and_analyze_filings(ticker, form_type, num_quarters)</code></p>
+
+<p>This agent calls its tool, which internally invokes the EDGAR fetcher and NLP analyzer. The tool returns a JSON object with quarterly language scores. The agent then formats this into a structured response.</p>
+
+<h4>NLP Analysis Pipeline</h4>
+<p>For each filing's extracted text, the system computes (see <a href="#nlp">Section 10</a> for full methodology):</p>
+<ul>
+  <li><strong>Uncertainty score</strong> (0–1): Ratio of hedging/risk words scaled by 40×</li>
+  <li><strong>Sentiment score</strong> (-1 to +1): Balance of confidence vs uncertainty words scaled by 50×</li>
+  <li><strong>Key risk phrases</strong>: Top 5 sentences by uncertainty word density, filtered for boilerplate</li>
+  <li><strong>Trend direction</strong>: "improving" (&lt;-10% change), "deteriorating" (&gt;+10%), or "stable"</li>
+  <li><strong>Trend magnitude</strong>: Percentage change in uncertainty score vs prior quarter</li>
+</ul>
+
+<h3>4.2 Market Signal Agent</h3>
+<p><strong>File:</strong> <code>backend/agent_definitions/market_agent.py</code><br>
+<strong>Tool:</strong> <code>compute_market_signal(ticker, filing_dates, uncertainty_scores)</code></p>
+
+<p>This agent receives the filing dates and uncertainty scores from the FilingNLP Agent's output (passed through the orchestrator) and computes market correlations.</p>
+
+<h4>Signal Computation Pipeline</h4>
+<ol>
+  <li><code>correlate_language_with_returns()</code> — Joins each quarter's uncertainty score with the stock's 30/60-day return after that filing date</li>
+  <li><code>compute_signal_strength()</code> — Splits quarters into above/below median uncertainty, computes average returns for each group, and checks how often high uncertainty predicted underperformance vs S&amp;P 500</li>
+</ol>
+
+<p>Signal strength classification:</p>
+<table>
+  <thead><tr><th>Strength</th><th>Criteria</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Strong</strong></td><td>Return spread &gt; 5% AND accuracy &gt; 60%</td></tr>
+    <tr><td><strong>Moderate</strong></td><td>Return spread &gt; 2% OR accuracy &gt; 50%</td></tr>
+    <tr><td><strong>Weak</strong></td><td>Neither condition met</td></tr>
+  </tbody>
+</table>
+
+<h3>4.3 Parallel Execution</h3>
+<p><strong>File:</strong> <code>backend/agent_definitions/orchestrator.py</code>, line ~188</p>
+
+<p>The orchestrator runs the MarketSignalAgent and all competitor FilingNLPAgent instances simultaneously:</p>
+<pre>tasks = [_run_agent(market_agent, market_input)]
+for comp in competitor_tickers:
+    tasks.append(_run_agent(filing_nlp_agent, comp_input))
+results = await asyncio.gather(*tasks, return_exceptions=True)</pre>
+
+<p>For a query about NVDA with AMD and INTC as competitors, three agent runs execute concurrently:</p>
+<ol>
+  <li>MarketSignalAgent analyzing NVDA stock returns</li>
+  <li>FilingNLPAgent analyzing AMD filings</li>
+  <li>FilingNLPAgent analyzing INTC filings</li>
+</ol>
+
+<h3>4.4 How EDA Adapts to Different Questions</h3>
+<table>
+  <thead><tr><th>Question</th><th>What Changes</th></tr></thead>
+  <tbody>
+    <tr><td>"Analyze Nvidia"</td><td>NVDA primary, AMD/INTC auto-detected as competitors, 10-Q filings</td></tr>
+    <tr><td>"Compare JPMorgan and Goldman Sachs"</td><td>JPM primary, GS as competitor, financial sector analysis</td></tr>
+    <tr><td>"Microsoft latest 10-K"</td><td>MSFT primary, AAPL/GOOG competitors, annual filings (10-K)</td></tr>
+    <tr><td>"Is Tesla improving?"</td><td>TSLA primary, F/GM competitors, trend-focused analysis</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== 5. STEP 3: HYPOTHESIZE ==================== -->
+<h2 id="step3" class="page-break">5. Step 3: Hypothesis Formation</h2>
+
+<h3>5.1 Recommendation Engine</h3>
+<p><strong>File:</strong> <code>backend/tools/compute_signal.py</code> — <code>generate_recommendation()</code></p>
+
+<p>The recommendation is determined by a rule-based engine (not the LLM) that combines language trend and market signal:</p>
+
+<table>
+  <thead><tr><th>Language Trend</th><th>Signal Strength</th><th>Magnitude &gt;20%</th><th>Recommendation</th></tr></thead>
+  <tbody>
+    <tr><td>Deteriorating</td><td>Strong/Moderate</td><td>Yes</td><td><strong>SELL</strong> (Bearish)</td></tr>
+    <tr><td>Deteriorating</td><td>Strong/Moderate</td><td>No</td><td><strong>UNDERWEIGHT</strong> (Cautionary)</td></tr>
+    <tr><td>Improving</td><td>Strong/Moderate</td><td>Yes</td><td><strong>BUY</strong> (Bullish)</td></tr>
+    <tr><td>Improving</td><td>Strong/Moderate</td><td>No</td><td><strong>OVERWEIGHT</strong> (Bullish)</td></tr>
+    <tr><td>Stable / Weak signal</td><td>Any</td><td>Any</td><td><strong>HOLD</strong> (Cautionary)</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 Confidence Score</h3>
+<p>See <a href="#confidence">Section 11</a> for full methodology. Confidence is computed from 6 data-driven factors with a base of 30%, ranging from 15% to 95%.</p>
+
+<h3>5.3 Research Memo</h3>
+<p>The Analyst Agent writes a structured Goldman Sachs-style research memo with these sections:</p>
+<ul>
+  <li><strong>Investment Thesis</strong> — Core argument in 2-3 sentences</li>
+  <li><strong>Language Trend Analysis</strong> — Quarter-by-quarter breakdown with specific scores</li>
+  <li><strong>Market Signal Analysis</strong> — Historical return data and S&amp;P 500 comparison</li>
+  <li><strong>Competitive Landscape</strong> — Peer filing language comparison</li>
+  <li><strong>Risk Factors</strong> — What could invalidate the recommendation</li>
+  <li><strong>Conclusion</strong> — Restatement with the single most important supporting data point</li>
+</ul>
+
+<h3>5.4 Visualization</h3>
+<p><strong>File:</strong> <code>backend/utils/chart_generator.py</code></p>
+
+<p>A dual-axis matplotlib chart is generated showing:</p>
+<ul>
+  <li>Left Y-axis: Uncertainty score over time (red line with markers)</li>
+  <li>Right Y-axis: Stock price over time (green line)</li>
+  <li>Competitor uncertainty as dashed lines in different colors</li>
+  <li>Filing dates marked with vertical dotted lines</li>
+  <li>Dark terminal aesthetic (#0f1117 background) matching the frontend</li>
+</ul>
+<p>The chart is returned as a base64-encoded PNG and displayed inline in the frontend.</p>
+
+<h3>5.5 Downloadable Artifacts</h3>
+<p>The frontend provides four downloadable outputs:</p>
+<table>
+  <thead><tr><th>Artifact</th><th>Format</th><th>Contents</th></tr></thead>
+  <tbody>
+    <tr><td>Full Research Report</td><td>HTML → PDF</td><td>Methodology, data tables, chart, appendices, source links</td></tr>
+    <tr><td>Filing Sources</td><td>CSV</td><td>Every filing URL, period, date, form type for all companies</td></tr>
+    <tr><td>Analysis Scores</td><td>CSV</td><td>Quarterly uncertainty and sentiment scores</td></tr>
+    <tr><td>Raw Data</td><td>CSV</td><td>Full dataset including extracted risk phrases and filing URLs</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== 6. CORE REQUIREMENTS ==================== -->
+<h2 id="core" class="page-break">6. Core Requirements Implementation</h2>
+
+<table>
+  <thead><tr><th>Requirement</th><th>Status</th><th>Implementation</th><th>Location</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Frontend</strong></td><td>✓</td>
+      <td>React 18 + Tailwind CSS. Dark financial terminal aesthetic with live agent reasoning panel, signal card, chart, evidence panel, downloads section, and "How It Works" guide.</td>
+      <td><code>frontend/src/</code></td>
+    </tr>
+    <tr>
+      <td><strong>Agent Framework</strong></td><td>✓</td>
+      <td>Google ADK (<code>google-adk</code>) with Gemini 2.0 Flash via Vertex AI. Four agents with distinct system prompts.</td>
+      <td><code>backend/agent_definitions/</code></td>
+    </tr>
+    <tr>
+      <td><strong>Tool Calling</strong></td><td>✓</td>
+      <td>Three agent tools: <code>fetch_and_analyze_filings</code>, <code>compute_market_signal</code>, <code>generate_analyst_memo</code>. Each wraps multiple underlying utility functions.</td>
+      <td><code>backend/tools/</code></td>
+    </tr>
+    <tr>
+      <td><strong>Non-Trivial Dataset</strong></td><td>✓</td>
+      <td>SEC EDGAR: 3M+ chars per query (18 filings). Yahoo Finance: 500+ trading days per ticker. Both retrieved at runtime.</td>
+      <td><code>fetch_filings.py</code>, <code>fetch_prices.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>Multi-Agent Pattern</strong></td><td>✓</td>
+      <td>Orchestrator → Parallel Fan-Out → Synthesis. TickerParser, FilingNLPAgent, MarketSignalAgent, AnalystAgent.</td>
+      <td><code>orchestrator.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>Deployed</strong></td><td>✓</td>
+      <td>Frontend and backend on GCP Cloud Run (<code>us-central1</code>). Uses Vertex AI service account.</td>
+      <td>See <a href="#deployment">Section 13</a></td>
+    </tr>
+    <tr>
+      <td><strong>README</strong></td><td>✓</td>
+      <td>Comprehensive README with live demo link, three-step explanation, file references, architecture diagram, deployment commands.</td>
+      <td><code>README.md</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ==================== 7. GRAB-BAG ==================== -->
+<h2 id="grabbag" class="page-break">7. Grab-Bag Features</h2>
+
+<h3>7.1 Structured Output</h3>
+<p><strong>Files:</strong> <code>backend/schemas/language_signal.py</code>, <code>market_signal.py</code>, <code>analyst_memo.py</code></p>
+<p>Every agent is instructed to return typed JSON matching Pydantic model schemas. The orchestrator parses and validates the JSON output from each agent, with fallback handling for malformed responses. The schemas define exact field types for all inter-agent communication.</p>
+
+<h3>7.2 Data Visualization</h3>
+<p><strong>File:</strong> <code>backend/utils/chart_generator.py</code></p>
+<p>Professional dual-axis matplotlib chart with dark terminal styling, competitor overlays, filing date markers, and legend. Returned as base64 PNG.</p>
+
+<h3>7.3 Parallel Execution</h3>
+<p><strong>File:</strong> <code>backend/agent_definitions/orchestrator.py</code></p>
+<p>MarketSignalAgent and competitor FilingNLPAgent instances run simultaneously via <code>asyncio.gather()</code>. Results are awaited together with <code>return_exceptions=True</code> for fault tolerance.</p>
+
+<h3>7.4 Second Data Retrieval Method</h3>
+<p>Two distinct data sources: SEC EDGAR API (HTTP requests + HTML parsing) and Yahoo Finance (<code>yfinance</code> library). Different data types (text vs. time series), different APIs, different use cases.</p>
+
+<h3>7.5 Artifacts</h3>
+<p><strong>File:</strong> <code>frontend/src/components/EvidencePanel.jsx</code>, <code>DataSourcesPanel.jsx</code></p>
+<p>Four downloadable artifacts: full HTML research report (printable as PDF), filing sources CSV, analysis scores CSV, and raw data CSV with risk phrases. These persist beyond the session.</p>
+
+<!-- ==================== 8. TECH STACK ==================== -->
+<h2 id="techstack">8. Tech Stack</h2>
+
+<table>
+  <thead><tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Backend</td><td>Python 3.11+, FastAPI, Uvicorn</td><td>API server with async streaming</td></tr>
+    <tr><td>Agent Framework</td><td>Google ADK (<code>google-adk</code>)</td><td>Agent definition, tool registration, session management</td></tr>
+    <tr><td>LLM</td><td>Gemini 2.0 Flash via Vertex AI</td><td>Natural language understanding and generation</td></tr>
+    <tr><td>Filing Data</td><td>SEC EDGAR API (free, no key)</td><td>10-Q/10-K filing retrieval and text extraction</td></tr>
+    <tr><td>Price Data</td><td>Yahoo Finance via <code>yfinance</code></td><td>Historical OHLCV, returns, volatility, Sharpe</td></tr>
+    <tr><td>NLP</td><td>Rule-based word frequency (Python)</td><td>Uncertainty/confidence scoring, risk phrase extraction</td></tr>
+    <tr><td>Charts</td><td>Matplotlib</td><td>Dual-axis uncertainty vs. price visualization</td></tr>
+    <tr><td>HTML Parsing</td><td>BeautifulSoup</td><td>Strip HTML from SEC filing documents</td></tr>
+    <tr><td>Frontend</td><td>React 18 + Tailwind CSS + Vite</td><td>UI with streaming, dark terminal aesthetic</td></tr>
+    <tr><td>Deployment</td><td>GCP Cloud Run + Docker</td><td>Serverless container hosting</td></tr>
+  </tbody>
+</table>
+
+<!-- ==================== 9. AGENTS ==================== -->
+<h2 id="agents" class="page-break">9. Agent Design &amp; Prompts</h2>
+
+<h3>9.1 TickerParser Agent</h3>
+<p><strong>Purpose:</strong> Extract stock ticker symbols and form type from natural language questions.</p>
+<p><strong>Output:</strong> <code>{"primary_tickers": ["NVDA"], "competitor_tickers": ["AMD"], "form_type": "10-Q"}</code></p>
+<p>If no competitors are specified, the orchestrator auto-detects them from a sector peers lookup table covering 20+ major tickers.</p>
+
+<h3>9.2 FilingNLP Agent</h3>
+<p><strong>Purpose:</strong> Fetch and analyze SEC filing language for a company.</p>
+<p><strong>Key prompt instruction:</strong> "You MUST call the fetch_and_analyze_filings tool first. Do NOT generate data from your own knowledge."</p>
+<p>This ensures the agent always uses real EDGAR data rather than hallucinating filing content.</p>
+
+<h3>9.3 MarketSignal Agent</h3>
+<p><strong>Purpose:</strong> Correlate filing language uncertainty with subsequent stock performance.</p>
+<p><strong>Key prompt instruction:</strong> "You MUST call the compute_market_signal tool first. Do NOT generate data from your own knowledge."</p>
+
+<h3>9.4 Analyst Agent</h3>
+<p><strong>Purpose:</strong> Synthesize all findings into a structured research memo.</p>
+<p><strong>Output structure:</strong> The prompt specifies exact JSON schema and instructs the memo to follow Goldman Sachs-style formatting with Investment Thesis, Language Trend Analysis, Market Signal Analysis, Competitive Landscape, Risk Factors, and Conclusion sections.</p>
+
+<div class="box-amber box">
+  <strong>Design Decision:</strong> The orchestrator overrides the LLM's recommendation, confidence, language trend, and chart with deterministically computed values. This prevents the LLM from hallucinating confidence numbers or generating fake chart data. The LLM only writes the qualitative memo text.
+</div>
+
+<!-- ==================== 10. NLP ==================== -->
+<h2 id="nlp" class="page-break">10. NLP Methodology</h2>
+
+<p><strong>File:</strong> <code>backend/tools/analyze_language.py</code></p>
+
+<h3>10.1 Word Lists</h3>
+<p>Two curated sets of financially-relevant words:</p>
+<table>
+  <thead><tr><th>Category</th><th>Count</th><th>Examples</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Uncertainty</strong></td><td>24 words</td><td>may, might, could, risk, adverse, decline, volatility, litigation, deterioration, susceptible</td></tr>
+    <tr><td><strong>Confidence</strong></td><td>24 words</td><td>strong, growth, exceeded, surpassed, delivered, achieved, profitable, efficient, demand, contributed</td></tr>
+  </tbody>
+</table>
+
+<h3>10.2 Scoring</h3>
+<ul>
+  <li><strong>Uncertainty Score:</strong> <code>min(1.0, uncertainty_word_count / total_words × 40)</code> — Typical SEC filing ratios are 0.005–0.025, so the 40× scaling maps this to a 0.2–1.0 range for meaningful differentiation.</li>
+  <li><strong>Sentiment Score:</strong> <code>clamp(-1, 1, (confidence_count - uncertainty_count) / total_words × 50)</code> — Positive means net confident, negative means net uncertain.</li>
+</ul>
+
+<h3>10.3 Risk Phrase Extraction</h3>
+<p>Sentences are scored by uncertainty word density (uncertainty_words / total_words_in_sentence). The top 5 are returned, filtered through boilerplate patterns that skip legal disclaimers like "forward-looking statements can also be identified by words such as..."</p>
+
+<h3>10.4 Trend Detection</h3>
+<p>Compares the most recent quarter's uncertainty score to the prior quarter:</p>
+<ul>
+  <li>&gt;+10% change → <strong>deteriorating</strong></li>
+  <li>&lt;-10% change → <strong>improving</strong></li>
+  <li>Otherwise → <strong>stable</strong></li>
+</ul>
+
+<!-- ==================== 11. CONFIDENCE ==================== -->
+<h2 id="confidence">11. Confidence Score Methodology</h2>
+
+<p><strong>File:</strong> <code>backend/tools/compute_signal.py</code> — <code>generate_recommendation()</code></p>
+
+<p>Confidence is computed from 6 independent factors, each contributing a bounded amount:</p>
+
+<table>
+  <thead><tr><th>Factor</th><th>Max</th><th>How Computed</th></tr></thead>
+  <tbody>
+    <tr><td>Base</td><td>30%</td><td>Starting confidence for any recommendation</td></tr>
+    <tr><td>Signal strength</td><td>+20%</td><td>Strong: +20%, Moderate: +12%, Weak: +4%</td></tr>
+    <tr><td>Trend magnitude</td><td>+15%</td><td><code>min(0.15, |trend_magnitude| / 200)</code> — bigger language shift = more confident</td></tr>
+    <tr><td>Filing count</td><td>+10%</td><td><code>min(0.10, n_filings × 0.02)</code> — more data = more confident</td></tr>
+    <tr><td>Trend consistency</td><td>+10%</td><td>+10% if scores are monotonically trending, +5% if ≥70% consistent</td></tr>
+    <tr><td>Return spread</td><td>+10%</td><td><code>min(0.10, |avg_high_unc_return - avg_low_unc_return|)</code></td></tr>
+    <tr><td>Competitor divergence</td><td>+5%</td><td>+5% if primary company's trend is unique among peers</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Range:</strong> 15% (minimum clamp) to 95% (maximum clamp)</p>
+
+<div class="box">
+  <strong>Example:</strong> NVDA with a moderate signal (+12%), 16% trend magnitude (+1.2%), 6 filings (+12%), inconsistent trend (+0%), 4.9% return spread (+4.9%), no competitor divergence (+0%) = 30% + 12% + 1.2% + 12% + 0% + 4.9% + 0% = <strong>60.1% confidence</strong>.
+</div>
+
+<!-- ==================== 12. FRONTEND ==================== -->
+<h2 id="frontend" class="page-break">12. Frontend Design</h2>
+
+<p><strong>Directory:</strong> <code>frontend/src/</code></p>
+
+<h3>Components</h3>
+<table>
+  <thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>App.jsx</code></td><td>Main shell — handles streaming response, state management, layout</td></tr>
+    <tr><td><code>QueryBar.jsx</code></td><td>Input bar with example question chips</td></tr>
+    <tr><td><code>AgentSteps.jsx</code></td><td>Left panel showing live agent reasoning with color-coded agent names</td></tr>
+    <tr><td><code>SignalCard.jsx</code></td><td>Prominent Buy/Sell/Hold badge with confidence bar and metrics</td></tr>
+    <tr><td><code>ChartView.jsx</code></td><td>Renders base64 PNG chart from matplotlib</td></tr>
+    <tr><td><code>EvidencePanel.jsx</code></td><td>Key evidence, historical context, competitor comparison, research memo, report download</td></tr>
+    <tr><td><code>DataSourcesPanel.jsx</code></td><td>Compact download buttons for CSVs and EDGAR/Yahoo Finance links</td></tr>
+    <tr><td><code>HowItWorks.jsx</code></td><td>Interactive guide explaining the system's three-step pipeline</td></tr>
+  </tbody>
+</table>
+
+<h3>Streaming</h3>
+<p>The frontend reads the <code>/analyze</code> endpoint's newline-delimited JSON stream using <code>ReadableStream</code> + <code>TextDecoder</code>. Agent step events update the left panel in real time as agents complete their work.</p>
+
+<h3>Design Language</h3>
+<p>Dark financial terminal aesthetic: navy background (#0a0e1a), terminal green (#00d4aa) for positive signals, red (#ff4757) for negative, amber (#ffa502) for cautionary. IBM Plex Mono for numbers/tickers, Inter for body text.</p>
+
+<!-- ==================== 13. DEPLOYMENT ==================== -->
+<h2 id="deployment">13. Deployment</h2>
+
+<table>
+  <thead><tr><th>Service</th><th>Platform</th><th>URL</th><th>Config</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Frontend</strong></td>
+      <td>GCP Cloud Run</td>
+      <td><a href="https://filinglens-frontend-879618059262.us-central1.run.app">filinglens-frontend-879618059262.us-central1.run.app</a></td>
+      <td>Node 18 build → Nginx Alpine, 256Mi RAM</td>
+    </tr>
+    <tr>
+      <td><strong>Backend API</strong></td>
+      <td>GCP Cloud Run</td>
+      <td><a href="https://filinglens-api-879618059262.us-central1.run.app">filinglens-api-879618059262.us-central1.run.app</a></td>
+      <td>Python 3.11-slim + Uvicorn, 1Gi RAM, 300s timeout</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Authentication:</strong> The backend uses Vertex AI via the Cloud Run service account — no API keys needed in production. The <code>GOOGLE_GENAI_USE_VERTEXAI=TRUE</code> environment variable tells Google ADK to use the Vertex AI backend.</p>
+
+<p><strong>GCP Project:</strong> <code>agentic-ai-for-analytics</code>, region <code>us-central1</code></p>
+
+<!-- ==================== 14. TESTING ==================== -->
+<h2 id="testing" class="page-break">14. Testing &amp; Edge Cases</h2>
+
+<h3>Tests Performed</h3>
+<table>
+  <thead><tr><th>Test Case</th><th>Input</th><th>Expected</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>Valid company</td><td>"Analyze Nvidia"</td><td>Full analysis with recommendation</td><td>✓ UNDERWEIGHT, 73% confidence</td></tr>
+    <tr><td>Company name (not ticker)</td><td>"Is Apple improving?"</td><td>Resolves AAPL, runs analysis</td><td>✓ Works correctly</td></tr>
+    <tr><td>10-K annual filing</td><td>"Google latest 10-K"</td><td>Uses 10-K form type</td><td>✓ Fetches annual filings</td></tr>
+    <tr><td>Comparison query</td><td>"Compare Tesla and Ford"</td><td>TSLA primary, F as competitor</td><td>✓ Side-by-side analysis</td></tr>
+    <tr><td>Vague question</td><td>"What's the market doing?"</td><td>Error message</td><td>✓ "Could not identify any company tickers"</td></tr>
+    <tr><td>Empty question</td><td>""</td><td>Error message</td><td>✓ Same error message</td></tr>
+    <tr><td>Company not in peers</td><td>"Analyze Palantir"</td><td>Works without competitors</td><td>✓ Runs with no competitor comparison</td></tr>
+    <tr><td>Financial sector</td><td>"Analyze JPMorgan"</td><td>Different sector analysis</td><td>✓ JPM with GS/MS as competitors</td></tr>
+    <tr><td>Cross-industry variation</td><td>Multiple companies</td><td>Different scores per industry</td><td>✓ NVDA 0.655, JPM 0.230, TSLA 0.551</td></tr>
+    <tr><td>Confidence variation</td><td>Multiple companies</td><td>Different confidence per company</td><td>✓ Ranges from 62% to 87%</td></tr>
+  </tbody>
+</table>
+
+<h3>Error Handling</h3>
+<ul>
+  <li><strong>No filings found:</strong> Returns error message instead of hallucinated data</li>
+  <li><strong>Agent doesn't call tool:</strong> Strengthened prompts + orchestrator overrides ensure data-grounded output</li>
+  <li><strong>JSON parse failures:</strong> Fallback handling strips markdown code fences, handles malformed LLM output</li>
+  <li><strong>Market data unavailable:</strong> Graceful degradation — analysis continues without market signal</li>
+  <li><strong>Numpy bool serialization:</strong> Explicitly cast to Python <code>bool()</code> for JSON compatibility</li>
+</ul>
+
+<!-- ==================== 15. LIMITATIONS ==================== -->
+<h2 id="limitations">15. Limitations &amp; Future Work</h2>
+
+<h3>Current Limitations</h3>
+<ul>
+  <li><strong>NLP is rule-based:</strong> Word list approach is simple but effective. A financial sentiment model (e.g., FinBERT) would capture more nuanced language.</li>
+  <li><strong>Section extraction is regex-based:</strong> Some filings have non-standard HTML structure, causing partial or missed section extraction.</li>
+  <li><strong>Sentiment skews negative:</strong> SEC filings are legally cautious by nature, so sentiment is almost always negative. The <em>trend</em> (change over time) is more informative than the absolute value.</li>
+  <li><strong>EDGAR rate limiting:</strong> SEC limits to 10 requests/second. Each analysis takes 30-60 seconds due to sequential filing fetches.</li>
+  <li><strong>No session memory:</strong> Each query is independent — no follow-up questions or iterative refinement.</li>
+</ul>
+
+<h3>Future Improvements</h3>
+<ul>
+  <li><strong>Caching:</strong> Redis cache for EDGAR and yfinance calls to make repeat queries instant</li>
+  <li><strong>FinBERT:</strong> Use a pre-trained financial sentiment model for more accurate language analysis</li>
+  <li><strong>Iterative refinement:</strong> Let users ask follow-up questions with session context</li>
+  <li><strong>More filing sections:</strong> Analyze forward-looking statements, financial tables, and footnotes</li>
+  <li><strong>Real-time SSE:</strong> True server-sent events for smoother streaming UX</li>
+</ul>
+
+<!-- ==================== 16. FILE MAP ==================== -->
+<h2 id="filemap" class="page-break">16. File Map</h2>
+
+<pre>filinglens/
+├── README.md                              # Project documentation
+├── .gitignore                             # Git ignore rules
+│
+├── backend/
+│   ├── Dockerfile                         # Python 3.11-slim + uvicorn
+│   ├── .dockerignore
+│   ├── .env.example                       # Vertex AI config template
+│   ├── requirements.txt                   # Python dependencies
+│   ├── main.py                            # FastAPI app, /analyze streaming endpoint
+│   │
+│   ├── agent_definitions/
+│   │   ├── orchestrator.py                # Main orchestration: parse → fan-out → synthesize
+│   │   ├── filing_nlp_agent.py            # EDGAR filing language analysis agent
+│   │   ├── market_agent.py                # Stock return correlation agent
+│   │   └── analyst_agent.py               # Research memo synthesis agent
+│   │
+│   ├── tools/
+│   │   ├── fetch_filings.py               # EDGAR API: CIK lookup, filing fetch, text extraction
+│   │   ├── fetch_prices.py                # Yahoo Finance: prices, returns, volatility, Sharpe
+│   │   ├── analyze_language.py            # NLP: uncertainty/sentiment scoring, risk phrases
+│   │   └── compute_signal.py              # Signal correlation, strength, recommendation engine
+│   │
+│   ├── schemas/
+│   │   ├── language_signal.py             # Pydantic: LanguageSignal, QuarterlyLanguageScore
+│   │   ├── market_signal.py               # Pydantic: MarketSignal, FilingReturnCorrelation
+│   │   └── analyst_memo.py                # Pydantic: AnalystMemo
+│   │
+│   └── utils/
+│       └── chart_generator.py             # Matplotlib dual-axis chart → base64 PNG
+│
+└── frontend/
+    ├── Dockerfile                         # Node build → Nginx Alpine
+    ├── nginx.conf                         # SPA routing config
+    ├── package.json
+    ├── vite.config.js
+    ├── tailwind.config.js
+    ├── index.html
+    └── src/
+        ├── main.jsx                       # React entry point
+        ├── index.css                      # Tailwind + custom styles
+        ├── App.jsx                        # Main app shell + streaming logic
+        └── components/
+            ├── QueryBar.jsx               # Input bar + example chips
+            ├── AgentSteps.jsx             # Live agent reasoning panel
+            ├── SignalCard.jsx             # Buy/Sell/Hold signal display
+            ├── ChartView.jsx              # Base64 chart renderer
+            ├── EvidencePanel.jsx          # Evidence, memo, report download
+            ├── DataSourcesPanel.jsx       # CSV download buttons
+            └── HowItWorks.jsx             # System guide</pre>
+
+<!-- ==================== FOOTER ==================== -->
+<div class="footer">
+  <p><strong>FilingLens</strong> — SEC Intelligence Platform</p>
+  <p>IEOR E4576: Agentic AI for Analytics — Project 2 — Columbia University</p>
+  <p>All data retrieved at runtime from SEC EDGAR and Yahoo Finance. This system is for educational purposes and does not constitute financial advice.</p>
+</div>
+
+</body>
+</html>
