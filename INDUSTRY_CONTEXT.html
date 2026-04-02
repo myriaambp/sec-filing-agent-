@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FilingLens — Industry Context & Background</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @page { size: A4; margin: 18mm 22mm; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: #1e293b; line-height: 1.75;
+    padding: 48px 60px; max-width: 880px;
+    margin: 0 auto; font-size: 12.5px;
+  }
+  .cover { text-align: center; padding: 80px 0 60px; page-break-after: always; }
+  .cover h1 { font-size: 38px; font-weight: 700; letter-spacing: -0.5px; color: #0f172a; }
+  .cover .subtitle { font-size: 16px; color: #64748b; margin: 8px 0 32px; }
+  .cover .meta { font-size: 13px; color: #94a3b8; line-height: 2; }
+  .cover .meta strong { color: #475569; }
+  h2 { font-size: 19px; font-weight: 700; color: #0f172a; margin: 40px 0 14px; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; }
+  h3 { font-size: 14px; font-weight: 600; color: #1e293b; margin: 24px 0 8px; }
+  h4 { font-size: 12.5px; font-weight: 600; color: #334155; margin: 18px 0 6px; }
+  p { margin: 8px 0; }
+  ul, ol { padding-left: 22px; margin: 8px 0 16px; }
+  li { margin: 5px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 11.5px; }
+  thead th { text-align: left; padding: 8px 10px; background: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; }
+  td { padding: 6px 10px; border-bottom: 1px solid #f1f5f9; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  .box { background: #f8fafc; border-left: 3px solid #2563eb; padding: 14px 18px; border-radius: 0 6px 6px 0; margin: 14px 0; }
+  .box-green { border-left-color: #10b981; background: #ecfdf5; }
+  .box-amber { border-left-color: #f59e0b; background: #fffbeb; }
+  .quote { border-left: 3px solid #94a3b8; padding: 12px 18px; margin: 14px 0; background: #f8fafc; font-style: italic; color: #475569; }
+  a { color: #2563eb; text-decoration: none; }
+  strong { color: #0f172a; }
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; }
+  .page-break { page-break-before: always; }
+  @media print { body { padding: 0; } .cover { padding: 120px 0 80px; } h2, h3 { break-after: avoid; } }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>Industry Context &amp; Background</h1>
+  <div class="subtitle">Understanding the Problem FilingLens Solves</div>
+  <div class="meta">
+    <strong>Companion document to:</strong> FilingLens Project Report<br>
+    <strong>Course:</strong> IEOR E4576 — Agentic AI for Analytics<br>
+    <strong>Author:</strong> Myriam Bengoechea Pardo<br>
+    <strong>Date:</strong> April 2026
+  </div>
+</div>
+
+<!-- 1. THE PROBLEM -->
+<h2>1. The Problem: Information Overload in Equity Research</h2>
+
+<p>Every quarter, over 8,000 public companies in the United States file mandatory disclosure documents with the Securities and Exchange Commission (SEC). These filings — primarily 10-Q (quarterly) and 10-K (annual) reports — contain critical information about a company's financial health, risk factors, management outlook, and business strategy.</p>
+
+<p>A single 10-Q filing is typically 30–80 pages. A 10-K can exceed 200 pages. For an analyst covering even 20 companies, that's <strong>thousands of pages of dense legal and financial text every quarter</strong>. The sheer volume makes it impossible for any human to read every filing word-by-word and detect subtle shifts in management language over time.</p>
+
+<div class="quote">
+  "The single most important thing to look for in a 10-K is what management isn't saying this quarter that they said last quarter. The absence of confident language is often more telling than the presence of risk warnings."
+  <br><span style="font-style:normal; font-size:11px; color:#94a3b8;">— Common wisdom in institutional equity research</span>
+</div>
+
+<h3>1.1 Why Filing Language Matters</h3>
+
+<p>Academic research in financial linguistics has established that the language used in SEC filings contains predictive information about future stock performance. Key findings include:</p>
+
+<ul>
+  <li><strong>Loughran &amp; McDonald (2011)</strong> — Developed the foundational financial sentiment word lists used across the industry. Showed that negative words in 10-K filings predict lower future returns and higher volatility.</li>
+  <li><strong>Li (2010)</strong> — Found that increased "fog" (complexity) in MD&amp;A sections correlates with lower future earnings.</li>
+  <li><strong>Bodnaruk et al. (2015)</strong> — Demonstrated that the proportion of constraining words in 10-K filings predicts financial constraints and future distress.</li>
+  <li><strong>Tetlock (2007)</strong> — Showed that pessimistic media language about companies predicts downward pressure on stock prices and reverts within a week.</li>
+</ul>
+
+<p>The core insight is that <strong>management teams choose their words carefully</strong>. When a company's outlook is deteriorating, legal counsel and IR teams will shift language from confident ("strong growth," "exceeded expectations") to hedging ("may face challenges," "uncertain conditions"). These shifts often precede the actual financial deterioration by 1–2 quarters.</p>
+
+<h3>1.2 The Gap FilingLens Fills</h3>
+
+<p>Professional tools for SEC filing analysis exist (Bloomberg Terminal, Sentieo, AlphaSense), but they cost $20,000–$50,000+ per year. Individual investors, students, and small funds have no access to automated filing language analysis. FilingLens demonstrates that the core analytical workflow — collect, analyze, hypothesize — can be automated using modern AI agent architectures at zero marginal cost.</p>
+
+<!-- 2. THE SEC FILING ECOSYSTEM -->
+<h2 class="page-break">2. The SEC Filing Ecosystem</h2>
+
+<h3>2.1 What is the SEC?</h3>
+
+<p>The <strong>Securities and Exchange Commission</strong> is the U.S. federal agency responsible for regulating securities markets. Its mission is to protect investors, maintain fair and efficient markets, and facilitate capital formation. All publicly traded companies in the U.S. must file periodic disclosure documents with the SEC.</p>
+
+<h3>2.2 Key Filing Types</h3>
+
+<table>
+  <thead><tr><th>Filing</th><th>Frequency</th><th>Due</th><th>Contents</th><th>Typical Length</th></tr></thead>
+  <tbody>
+    <tr><td><strong>10-Q</strong></td><td>Quarterly</td><td>40–45 days after quarter end</td><td>Unaudited financial statements, MD&amp;A, risk factor updates, legal proceedings</td><td>30–80 pages</td></tr>
+    <tr><td><strong>10-K</strong></td><td>Annual</td><td>60–90 days after fiscal year end</td><td>Audited financials, full MD&amp;A, complete risk factors, business description, properties</td><td>100–300 pages</td></tr>
+    <tr><td><strong>8-K</strong></td><td>Event-driven</td><td>Within 4 business days</td><td>Material events: earnings, acquisitions, executive changes, bankruptcy</td><td>2–20 pages</td></tr>
+    <tr><td><strong>DEF 14A</strong></td><td>Annual</td><td>Before annual meeting</td><td>Proxy statement: executive compensation, board nominees, shareholder proposals</td><td>50–150 pages</td></tr>
+  </tbody>
+</table>
+
+<p>FilingLens focuses on <strong>10-Q and 10-K filings</strong> because they contain the richest language for sentiment analysis, particularly in two sections:</p>
+
+<h4>MD&amp;A (Management's Discussion and Analysis)</h4>
+<p>This is where management explains the company's financial results <em>in their own words</em>. Unlike the financial statements (which are governed by GAAP accounting rules), MD&amp;A is a narrative section where management has discretion over word choice. This is where language shifts are most detectable and most meaningful.</p>
+
+<p>Example language shifts:</p>
+<ul>
+  <li><strong>Confident (Q2):</strong> "Revenue growth accelerated driven by strong demand across all segments"</li>
+  <li><strong>Hedging (Q3):</strong> "Revenue may be impacted by uncertain macroeconomic conditions and challenging demand dynamics"</li>
+</ul>
+
+<h4>Risk Factors (Item 1A)</h4>
+<p>Companies must disclose material risks. While much of this section is boilerplate that rarely changes, <strong>additions or modifications to risk factors</strong> signal new concerns. A company adding "tariff" or "supply chain disruption" to its risk factors before it appears in earnings is a leading indicator.</p>
+
+<h3>2.3 EDGAR Database</h3>
+
+<p><strong>EDGAR</strong> (Electronic Data Gathering, Analysis, and Retrieval) is the SEC's public filing database. It contains every filing from every public company since 1993 — over 20 million documents. Key facts:</p>
+
+<ul>
+  <li><strong>Free and public</strong> — no API key required, only a User-Agent header with an email</li>
+  <li><strong>Rate limited</strong> — maximum 10 requests per second</li>
+  <li><strong>Comprehensive</strong> — every filing from every U.S. public company</li>
+  <li><strong>Machine-readable</strong> — filings are available as HTML, XML (XBRL), and plain text</li>
+</ul>
+
+<div class="box">
+  <strong>Data scale:</strong> NVIDIA alone has filed 120+ documents with the SEC since its IPO. Across all ~8,000 public companies, EDGAR receives approximately 500,000 new filings per year. This is a genuinely non-trivial dataset.
+</div>
+
+<!-- 3. FINANCIAL LANGUAGE ANALYSIS -->
+<h2 class="page-break">3. Financial Language Analysis: Theory &amp; Practice</h2>
+
+<h3>3.1 The Academic Foundation</h3>
+
+<p>Financial text mining emerged as a field in the mid-2000s when researchers began applying NLP techniques to SEC filings, earnings call transcripts, and financial news. The field is built on a key observation: <strong>markets are not perfectly efficient at processing textual information</strong>. While stock prices instantly reflect numerical earnings data, the information embedded in language takes hours to days to be fully priced in.</p>
+
+<h3>3.2 Word-Based vs Model-Based Approaches</h3>
+
+<table>
+  <thead><tr><th>Approach</th><th>How It Works</th><th>Pros</th><th>Cons</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Word Lists</strong><br>(FilingLens uses this)</td>
+      <td>Count occurrences of pre-defined positive/negative words</td>
+      <td>Transparent, reproducible, fast, no training needed</td>
+      <td>Misses context, sarcasm, negation ("not strong")</td>
+    </tr>
+    <tr>
+      <td><strong>FinBERT / LM Models</strong></td>
+      <td>Fine-tuned transformer model on financial text</td>
+      <td>Captures context and nuance</td>
+      <td>Black box, requires GPU, may overfit to training data</td>
+    </tr>
+    <tr>
+      <td><strong>LLM Zero-Shot</strong></td>
+      <td>Ask GPT/Gemini to score sentiment directly</td>
+      <td>Flexible, no word lists needed</td>
+      <td>Expensive, non-deterministic, hard to validate</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>FilingLens uses the <strong>word list approach</strong> for a deliberate reason: <strong>reproducibility and auditability</strong>. When the system says a filing has an uncertainty score of 0.701, you can verify this by counting the exact words yourself. Every score comes with the word count and total words that produced it. In a financial context, this transparency is critical.</p>
+
+<h3>3.3 Why Uncertainty Words Matter More Than Positive Words</h3>
+
+<p>SEC filings have an inherent <strong>negative language bias</strong>. Companies are legally required to disclose risks, and their legal teams ensure that protective language like "may," "could," and "might" appears throughout. This means:</p>
+
+<ul>
+  <li>Absolute sentiment scores are almost always negative for SEC filings — this is normal</li>
+  <li>What matters is the <strong>relative change</strong> over time — is the company using <em>more</em> or <em>fewer</em> hedging words than last quarter?</li>
+  <li>A shift from 37 uncertainty words to 45 uncertainty words across quarters of similar length is a meaningful signal</li>
+</ul>
+
+<p>This is why FilingLens tracks <strong>trends</strong> (quarter-over-quarter changes) rather than absolute values. A company with an uncertainty score of 0.70 isn't necessarily in trouble — but if that score was 0.58 two quarters ago, the trajectory is concerning.</p>
+
+<h3>3.4 The Predictive Signal: Language → Returns</h3>
+
+<p>FilingLens tests a specific hypothesis: <strong>does increasing uncertainty in filing language predict subsequent stock underperformance?</strong></p>
+
+<p>The system operationalizes this by:</p>
+<ol>
+  <li>Computing an uncertainty score for each quarter's filing</li>
+  <li>Computing the stock's 30-day and 60-day return after each filing date</li>
+  <li>Comparing returns in high-uncertainty quarters vs low-uncertainty quarters</li>
+  <li>Benchmarking against the S&amp;P 500 to isolate company-specific effects from market movements</li>
+</ol>
+
+<p>This is a simplified version of what quantitative hedge funds do at much larger scale. The key innovation is making it accessible through a conversational AI interface.</p>
+
+<!-- 4. THE MULTI-AGENT APPROACH -->
+<h2 class="page-break">4. Why a Multi-Agent Architecture?</h2>
+
+<h3>4.1 The Data Analyst Workflow</h3>
+
+<p>A human equity research analyst performing this analysis would follow roughly this workflow:</p>
+
+<ol>
+  <li><strong>Identify the company</strong> and its peer group</li>
+  <li><strong>Pull the filings</strong> from EDGAR and read them</li>
+  <li><strong>Take notes</strong> on language shifts, new risk factors, and changes in tone</li>
+  <li><strong>Pull the market data</strong> and check how the stock reacted to prior filings</li>
+  <li><strong>Compare to competitors</strong> — is this company's language shift unique or industry-wide?</li>
+  <li><strong>Write a research memo</strong> with a recommendation, citing specific evidence</li>
+</ol>
+
+<p>Steps 2-3 and step 4 are <strong>independent</strong> — they can happen in parallel. Steps 5-6 require the outputs of both. This natural parallelism maps directly to a multi-agent architecture.</p>
+
+<h3>4.2 Why Not a Single Agent?</h3>
+
+<p>A single LLM agent could theoretically do everything, but there are practical problems:</p>
+
+<ul>
+  <li><strong>Context window limits:</strong> 18 filings × 15K chars = 270K chars of filing text alone. Adding price data, competitor analysis, and the memo template would exceed most models' effective context.</li>
+  <li><strong>Specialization:</strong> The NLP analysis and market correlation require different "mental models." Separate agents with focused prompts perform better than one agent trying to juggle everything.</li>
+  <li><strong>Latency:</strong> Sequential execution would take 2-3 minutes. Parallel fan-out cuts this roughly in half.</li>
+  <li><strong>Reliability:</strong> If the market data agent fails, the filing analysis is still valid. Fault isolation comes naturally from the multi-agent pattern.</li>
+</ul>
+
+<h3>4.3 The Orchestrator Pattern</h3>
+
+<p>FilingLens uses an <strong>Orchestrator → Parallel Fan-Out → Synthesis</strong> pattern. The orchestrator is a deterministic Python function, not an LLM agent. This is a deliberate architectural choice:</p>
+
+<div class="box-amber box">
+  <strong>Design principle:</strong> Use LLMs for tasks that require language understanding and generation. Use deterministic code for tasks that require reliable control flow, data transformation, and computation. The orchestrator coordinates; the agents analyze and write.
+</div>
+
+<p>The orchestrator:</p>
+<ul>
+  <li>Calls the TickerParser agent to extract tickers (LLM task — understanding natural language)</li>
+  <li>Determines competitor tickers from a lookup table (deterministic — no LLM needed)</li>
+  <li>Manages parallel execution with <code>asyncio.gather()</code> (deterministic)</li>
+  <li>Passes results between agents (deterministic data transformation)</li>
+  <li>Overrides LLM-generated confidence/recommendation with computed values (deterministic)</li>
+  <li>Generates the chart via matplotlib (deterministic)</li>
+  <li>Assembles source links and data for the frontend (deterministic)</li>
+</ul>
+
+<!-- 5. MARKET CONTEXT -->
+<h2 class="page-break">5. Market Context: Who Uses This Kind of Analysis?</h2>
+
+<h3>5.1 Institutional Investors</h3>
+
+<p>Hedge funds, mutual funds, and pension funds employ teams of analysts who read SEC filings as a core part of their investment process. Large quantitative funds (Renaissance Technologies, Two Sigma, Citadel) have been mining filing language programmatically since the early 2010s.</p>
+
+<table>
+  <thead><tr><th>Firm Type</th><th>How They Use Filing Analysis</th><th>Scale</th></tr></thead>
+  <tbody>
+    <tr><td>Fundamental hedge funds</td><td>Analysts read filings manually, note tone shifts in research notes</td><td>20-100 companies per analyst</td></tr>
+    <tr><td>Quant funds</td><td>NLP pipelines process all filings automatically, generate alpha signals</td><td>All 8,000+ public companies</td></tr>
+    <tr><td>Sell-side research</td><td>Banks (Goldman, Morgan Stanley) publish research notes citing filing language</td><td>Coverage universe of 50-200 companies</td></tr>
+    <tr><td>Alternative data providers</td><td>Companies like Sentieo, AlphaSense sell filing analytics as a service</td><td>Entire EDGAR database</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 The Alternative Data Revolution</h3>
+
+<p>SEC filing language is part of a broader trend called <strong>"alternative data"</strong> — non-traditional data sources used for investment decisions. The alternative data market was valued at $7.3 billion in 2025 and is growing at 50%+ annually. Filing language analysis sits alongside:</p>
+
+<ul>
+  <li><strong>Satellite imagery</strong> — counting cars in Walmart parking lots to predict revenue</li>
+  <li><strong>Credit card transaction data</strong> — tracking consumer spending in real time</li>
+  <li><strong>Social media sentiment</strong> — monitoring Twitter/Reddit for stock-moving opinions</li>
+  <li><strong>Patent filings</strong> — tracking R&amp;D direction from patent applications</li>
+  <li><strong>Job postings</strong> — inferring company strategy from hiring patterns</li>
+</ul>
+
+<p>What makes filing language unique among alternative data sources is that it's <strong>free, public, and legally mandated</strong>. Companies can't opt out of disclosing risk factors.</p>
+
+<h3>5.3 Why This Matters Now: The AI Agent Moment</h3>
+
+<p>The convergence of three technologies makes FilingLens possible in 2026:</p>
+
+<ol>
+  <li><strong>Large Language Models</strong> — Gemini/GPT can understand financial text, extract tickers from natural language, and write research-quality memos</li>
+  <li><strong>Agent Frameworks</strong> — Google ADK, OpenAI Agents SDK, LangGraph provide the infrastructure for multi-agent coordination with tool calling</li>
+  <li><strong>Free APIs</strong> — EDGAR's public API and Yahoo Finance's free data mean the entire pipeline can run at zero marginal cost</li>
+</ol>
+
+<p>Five years ago, building this system would have required a team of engineers, a licensed financial data feed, and months of development. Today, a single developer can build it in days using agent frameworks and public data.</p>
+
+<!-- 6. COMPANY-SPECIFIC CONTEXT -->
+<h2 class="page-break">6. Understanding the Companies FilingLens Analyzes</h2>
+
+<h3>6.1 Sector Peer Groups</h3>
+
+<p>FilingLens automatically identifies competitor companies based on sector. This is critical because <strong>industry-wide trends should not be mistaken for company-specific signals</strong>. If every semiconductor company's filing language is deteriorating, that's a sector trend, not an NVDA-specific concern.</p>
+
+<table>
+  <thead><tr><th>Primary</th><th>Auto-Detected Peers</th><th>Sector Logic</th></tr></thead>
+  <tbody>
+    <tr><td>NVDA</td><td>AMD, INTC</td><td>Semiconductor / AI chip competitors</td></tr>
+    <tr><td>AAPL</td><td>MSFT, GOOG</td><td>Big Tech / consumer technology</td></tr>
+    <tr><td>TSLA</td><td>F, GM</td><td>Automotive / EV manufacturers</td></tr>
+    <tr><td>JPM</td><td>GS, MS</td><td>Investment banking / financial services</td></tr>
+    <tr><td>META</td><td>GOOG, SNAP</td><td>Social media / digital advertising</td></tr>
+    <tr><td>V</td><td>MA, PYPL</td><td>Payments / fintech</td></tr>
+    <tr><td>NFLX</td><td>DIS, WBD</td><td>Streaming / entertainment</td></tr>
+    <tr><td>CRM</td><td>ORCL, SAP</td><td>Enterprise software / cloud</td></tr>
+  </tbody>
+</table>
+
+<h3>6.2 What Makes Different Sectors Interesting</h3>
+
+<h4>Technology (NVDA, AAPL, MSFT)</h4>
+<p>Tech filings tend to have rapidly changing risk factors. New technologies (AI, cloud, autonomous vehicles) create new risks each quarter. The MD&amp;A sections often contain forward-looking language about product launches and market transitions. Language analysis can detect when a company's confidence about a technology transition (e.g., Apple's AI strategy) is increasing or faltering.</p>
+
+<h4>Financial Services (JPM, GS, MS)</h4>
+<p>Bank filings are uniquely complex because their "product" is money. Risk factors include credit risk, market risk, operational risk, and regulatory risk. Language shifts in bank filings often precede changes in loan loss provisions or trading revenue. Banks also tend to have lower uncertainty scores because their boilerplate is more standardized.</p>
+
+<h4>Automotive (TSLA, F, GM)</h4>
+<p>Auto industry filings reflect capital-intensive supply chain dynamics. Language about "supply chain disruption," "chip shortage," and "tariff exposure" has been particularly volatile in recent years. Tesla's filings are notably different from traditional automakers — less boilerplate, more direct language about technology and market positioning.</p>
+
+<!-- 7. REAL-WORLD EXAMPLES -->
+<h2 class="page-break">7. Real-World Examples of Filing Language Signaling</h2>
+
+<h3>7.1 Historical Precedent: Enron (2001)</h3>
+<p>Retrospective analysis of Enron's 10-K filings showed a dramatic increase in complexity and hedging language in the two years before its collapse. The MD&amp;A sections became increasingly opaque, with more qualifying language and fewer specific financial details. Researchers later identified this pattern as a red flag that could have been detected computationally.</p>
+
+<h3>7.2 COVID-19 Language Shift (2020)</h3>
+<p>In Q1 2020, virtually every public company added "pandemic" and "COVID-19" to their risk factors simultaneously. This is a case where <strong>competitor comparison matters</strong>: an industry-wide language shift is not a company-specific signal. Companies that were <em>already</em> using cautious language before COVID (suggesting they anticipated supply chain or demand issues) showed a different pattern than those that only pivoted after the pandemic hit.</p>
+
+<h3>7.3 AI Hype Cycle (2023-2025)</h3>
+<p>The emergence of generative AI created a fascinating natural experiment in filing language. Companies that genuinely benefited from AI (NVDA, MSFT) showed increasing confidence language around "artificial intelligence," "accelerating demand," and "data center growth." Companies where AI was primarily a buzzword showed the language additions without corresponding changes in financial metrics — detectable through the gap between confident language and actual results.</p>
+
+<h3>7.4 What FilingLens Would Have Detected</h3>
+<p>In each of these cases, a system like FilingLens — tracking uncertainty scores over time and comparing to peers — would have surfaced the relevant signal. The power is not in any single quarter's score, but in the <strong>trajectory across quarters</strong> and the <strong>comparison to competitors</strong>.</p>
+
+<!-- 8. LIMITATIONS OF LANGUAGE ANALYSIS -->
+<h2 class="page-break">8. Limitations of SEC Filing Language Analysis</h2>
+
+<p>It's important to be transparent about what this approach <em>cannot</em> do:</p>
+
+<h3>8.1 Lagging Indicator</h3>
+<p>SEC filings are published 40-90 days after the quarter ends. By the time a 10-Q is filed, the market has already seen the quarterly earnings release (which comes out weeks earlier). Filing language analysis works best as a <strong>confirmation signal</strong> or for detecting nuances that earnings calls missed.</p>
+
+<h3>8.2 Legal Boilerplate</h3>
+<p>Much of the risk factors section is legally-mandated boilerplate that doesn't change quarter to quarter. The signal-to-noise ratio is low. FilingLens mitigates this by focusing on MD&amp;A (where management has more discretion) and by tracking <em>changes</em> rather than absolute levels.</p>
+
+<h3>8.3 Context and Negation</h3>
+<p>Word list approaches cannot distinguish between "we face significant risks" and "we do not face significant risks." Both would count "risks" as an uncertainty word. More sophisticated NLP (FinBERT, LLM-based analysis) can handle this, but at the cost of transparency and reproducibility.</p>
+
+<h3>8.4 Not a Crystal Ball</h3>
+<p>Filing language is one input among many. Macroeconomic conditions, competitive dynamics, management changes, and random events all affect stock prices. FilingLens should be used as a <strong>screening tool</strong> that highlights companies worth investigating further, not as a standalone trading signal.</p>
+
+<div class="box-green box">
+  <strong>The honest pitch:</strong> FilingLens doesn't predict the future. It systematically reads thousands of pages that no human has time to read, detects subtle shifts in management tone, and flags the ones that have historically preceded stock moves. Whether you act on that information is your decision.
+</div>
+
+<!-- 9. THE AGENTIC AI PERSPECTIVE -->
+<h2 class="page-break">9. The Agentic AI Perspective</h2>
+
+<h3>9.1 Why This is a Good Agent Problem</h3>
+
+<p>Not every problem benefits from an agent architecture. FilingLens is a good fit because:</p>
+
+<ul>
+  <li><strong>Multiple data sources:</strong> Two distinct APIs (EDGAR, Yahoo Finance) with different formats require separate tool calls</li>
+  <li><strong>Multi-step reasoning:</strong> Collect → analyze → correlate → compare → synthesize is not a single LLM call</li>
+  <li><strong>Natural parallelism:</strong> Filing analysis and market analysis are independent tasks</li>
+  <li><strong>Dynamic routing:</strong> The question determines which companies, filing types, and competitors to analyze</li>
+  <li><strong>Structured output:</strong> The final deliverable is a complex JSON object with multiple typed fields, not free-form text</li>
+</ul>
+
+<h3>9.2 Design Decisions and Tradeoffs</h3>
+
+<table>
+  <thead><tr><th>Decision</th><th>Alternatives Considered</th><th>Why This Choice</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Rule-based NLP instead of FinBERT</td>
+      <td>FinBERT, LLM zero-shot sentiment</td>
+      <td>Transparency, reproducibility, no GPU needed. Users can verify every score.</td>
+    </tr>
+    <tr>
+      <td>Deterministic orchestrator instead of LLM router</td>
+      <td>LLM-based orchestrator agent</td>
+      <td>Reliability. LLM agents sometimes skip tool calls or hallucinate. Deterministic code always runs the right pipeline.</td>
+    </tr>
+    <tr>
+      <td>Override LLM confidence with computed values</td>
+      <td>Trust LLM's self-assessed confidence</td>
+      <td>LLMs consistently output 75% confidence. Computed confidence from 6 factors gives meaningful variation (62%-87%).</td>
+    </tr>
+    <tr>
+      <td>Generate chart in orchestrator, not agent</td>
+      <td>Have analyst agent generate chart via tool</td>
+      <td>Chart base64 is 200KB — too large for LLM to pass through its output. Direct generation bypasses this.</td>
+    </tr>
+    <tr>
+      <td>Google ADK + Vertex AI instead of OpenAI</td>
+      <td>OpenAI Agents SDK + GPT-4o</td>
+      <td>Free Vertex AI credits via GCP, natural fit with Cloud Run deployment, no separate API key needed.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>9.3 What the LLM Actually Does vs What Code Does</h3>
+
+<table>
+  <thead><tr><th>Task</th><th>Who Does It</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Parse "Analyze Nvidia" → NVDA</td><td>LLM (TickerParser)</td><td>Requires natural language understanding</td></tr>
+    <tr><td>Look up CIK for NVDA</td><td>Python code</td><td>API call — deterministic</td></tr>
+    <tr><td>Fetch filing HTML</td><td>Python code</td><td>HTTP request — deterministic</td></tr>
+    <tr><td>Count uncertainty words</td><td>Python code</td><td>Word counting — deterministic, must be reproducible</td></tr>
+    <tr><td>Compute 30-day return</td><td>Python code</td><td>Math — deterministic</td></tr>
+    <tr><td>Generate recommendation</td><td>Python code</td><td>Rule-based logic — must be auditable</td></tr>
+    <tr><td>Compute confidence</td><td>Python code</td><td>6-factor formula — must be data-driven</td></tr>
+    <tr><td>Generate chart</td><td>Python (matplotlib)</td><td>Visualization — deterministic</td></tr>
+    <tr><td>Write research memo</td><td>LLM (AnalystAgent)</td><td>Requires synthesizing data into coherent prose</td></tr>
+    <tr><td>Summarize findings in key_evidence</td><td>LLM (AnalystAgent)</td><td>Requires selecting most important points</td></tr>
+  </tbody>
+</table>
+
+<p>The pattern: <strong>LLMs handle language, code handles computation</strong>. This hybrid approach gets the best of both worlds — the LLM's writing ability and the code's reliability.</p>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p><strong>FilingLens</strong> — Industry Context &amp; Background</p>
+  <p>IEOR E4576: Agentic AI for Analytics — Columbia University — April 2026</p>
+</div>
+
+</body>
+</html>
